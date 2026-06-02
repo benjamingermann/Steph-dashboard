@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STEPH SYSTEM - Dashboard Interactivo</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            steph: {
+              bg: '#f4f5f5', white: '#ffffff', black: '#000000', dark: '#444444',
+              gray: '#777777', industrial: '#C5C7C4', danger: '#E31937',
+            }
+          },
+          fontFamily: {
+            barlow: ['Barlow', 'sans-serif'],
+            condensed: ['Barlow Condensed', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { border-radius: 0px !important; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f4f5f5; }
+    ::-webkit-scrollbar-thumb { background: #C5C7C4; }
+    ::-webkit-scrollbar-thumb:hover { background: #777777; }
+    
+    /* Clases para ocultar/mostrar pestañas */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.2s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    
+    /* Clases para el menú activo */
+    .nav-item.active { background-color: #000000; color: #ffffff; }
+  </style>
+</head>
+<body class="bg-steph-bg font-barlow text-steph-black h-screen flex overflow-hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="w-[210px] min-w-[210px] bg-steph-white border-r border-steph-industrial flex flex-col z-10">
+    <div class="bg-steph-black p-5 flex flex-col items-center justify-center border-b border-steph-black">
+      <h1 class="font-condensed text-steph-white text-2xl font-bold tracking-[0.2em] uppercase">Steph</h1>
+      <span class="text-steph-industrial text-[9px] tracking-widest uppercase mt-1">Innovations</span>
+    </div>
+
+    <div class="p-4 border-b border-steph-industrial">
+      <p class="font-condensed text-[11px] font-semibold tracking-[0.15em] text-steph-gray uppercase mb-3">Proyectos Activos</p>
+      
+      <div class="flex items-center gap-2 p-2 bg-steph-bg border-l-2 border-steph-black cursor-pointer mb-2">
+        <div class="w-2 h-2 bg-steph-black"></div>
+        <div class="flex flex-col overflow-hidden">
+          <span class="text-xs font-semibold uppercase tracking-wider truncate">E-Commerce Padel</span>
+          <span class="text-[10px] text-steph-gray font-condensed tracking-wider">PRY-001</span>
+        </div>
+      </div>
+      
+      <button onclick="alert('Funcionalidad: Abrir modal de creación de proyecto nuevo')" class="w-full mt-2 border border-dashed border-steph-industrial p-2 flex items-center justify-center gap-2 text-xs font-semibold text-steph-gray uppercase tracking-wider hover:border-steph-black hover:text-steph-black hover:bg-steph-bg transition-all">
+        <i class="ti ti-plus text-sm"></i> Nuevo
+      </button>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto p-3 flex flex-col gap-1" id="main-nav">
+      <button data-target="dashboard" class="nav-item active flex items-center gap-3 p-2 text-steph-dark hover:bg-steph-bg text-xs uppercase font-medium tracking-wider transition-colors w-full text-left">
+        <i class="ti ti-layout-dashboard text-lg"></i> Dashboard
+      </button>
+      <button data-target="ventas" class="nav-item flex items-center gap-3 p-2 text-steph-dark hover:bg-steph-bg text-xs uppercase font-medium tracking-wider transition-colors w-full text-left">
+        <i class="ti ti-chart-bar text-lg"></i> Ventas
+      </button>
+      <button data-target="costos" class="nav-item flex items-center gap-3 p-2 text-steph-dark hover:bg-steph-bg text-xs uppercase font-medium tracking-wider transition-colors w-full text-left">
+        <i class="ti ti-receipt-2 text-lg"></i> Costos
+      </button>
+      <button data-target="horas" class="nav-item flex items-center gap-3 p-2 text-steph-dark hover:bg-steph-bg text-xs uppercase font-medium tracking-wider transition-colors w-full text-left">
+        <i class="ti ti-user-clock text-lg"></i> Horas HH
+      </button>
+      <div class="mt-auto pt-2 border-t border-steph-industrial">
+        <button onclick="alert('Abriendo configuración general')" class="flex items-center gap-3 p-2 text-steph-gray hover:text-steph-black hover:bg-steph-bg text-xs uppercase font-medium tracking-wider transition-colors w-full text-left">
+          <i class="ti ti-settings text-lg"></i> Configuración
+        </button>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <main class="flex-1 flex flex-col min-w-0 relative">
+    
+    <header class="h-[56px] bg-steph-white border-b border-steph-industrial px-8 flex items-center justify-between shrink-0">
+      <div>
+        <h2 class="font-barlow text-lg font-bold tracking-[0.1em] uppercase text-steph-black">E-Commerce Padel</h2>
+        <p class="text-[11px] text-steph-gray tracking-wider uppercase font-medium">STEPH SYSTEM · PRY-001</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="bg-steph-black text-steph-white px-3 py-1 text-[10px] font-condensed font-bold tracking-widest uppercase">
+          En Ejecución
+        </span>
+      </div>
+    </header>
+
+    <!-- ÁREA DE PESTAÑAS (VISTAS) -->
+    <div class="flex-1 overflow-y-auto p-8 relative">
+      
+      <!-- VISTA: DASHBOARD -->
+      <div id="dashboard" class="tab-content active max-w-6xl mx-auto space-y-6">
+        <div class="border border-steph-industrial bg-steph-white p-4 text-[12px] font-bold uppercase tracking-wider text-steph-dark flex items-center gap-3 border-l-4 border-l-steph-danger shadow-sm">
+          <i class="ti ti-alert-triangle text-steph-danger text-lg"></i>
+          Atención: El margen bruto actual (12.5%) está por debajo del objetivo corporativo (15%).
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-steph-white border border-steph-industrial p-5 relative shadow-sm">
+            <div class="absolute top-0 left-0 w-full h-[3px] bg-steph-black"></div>
+            <h3 class="font-condensed text-[12px] font-bold tracking-[0.15em] text-steph-gray uppercase mb-2">Costo Incurrido</h3>
+            <p class="font-condensed text-4xl font-bold text-steph-black leading-none mb-2">$1.750.000</p>
+            <p class="text-[11px] text-steph-gray uppercase tracking-wider font-semibold">Presupuesto: $1.500.000</p>
+          </div>
+          <div class="bg-steph-white border border-steph-industrial p-5 relative shadow-sm">
+            <div class="absolute top-0 left-0 w-full h-[3px] bg-steph-industrial"></div>
+            <h3 class="font-condensed text-[12px] font-bold tracking-[0.15em] text-steph-gray uppercase mb-2">Precio de Contrato</h3>
+            <p class="font-condensed text-4xl font-bold text-steph-black leading-none mb-2">$2.000.000</p>
+            <p class="text-[11px] text-steph-gray uppercase tracking-wider font-semibold">Facturado: $500.000</p>
+          </div>
+          <div class="bg-steph-white border border-steph-industrial p-5 relative shadow-sm">
+            <div class="absolute top-0 left-0 w-full h-[3px] bg-steph-danger"></div>
+            <h3 class="font-condensed text-[12px] font-bold tracking-[0.15em] text-steph-gray uppercase mb-2">Margen Bruto</h3>
+            <p class="font-condensed text-4xl font-bold text-steph-danger leading-none mb-2">12.5%</p>
+            <p class="text-[11px] text-steph-gray uppercase tracking-wider font-semibold">Ganancia: $250.000</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 bg-steph-white border border-steph-industrial p-6 shadow-sm flex flex-col">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-4 h-[3px] bg-steph-black"></div>
+              <h3 class="font-barlow text-sm font-bold tracking-[0.15em] uppercase text-steph-black">Evolución de Costos</h3>
+            </div>
+            <div class="flex-1 min-h-[250px] relative">
+              <canvas id="costChart"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-steph-white border border-steph-industrial p-6 shadow-sm">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-4 h-[3px] bg-steph-industrial"></div>
+              <h3 class="font-barlow text-sm font-bold tracking-[0.15em] uppercase text-steph-black">Métricas Clave</h3>
+            </div>
+            <div class="space-y-4">
+              <div class="flex justify-between items-center py-3 border-b border-steph-bg">
+                <span class="text-xs uppercase font-bold tracking-wider text-steph-gray">Avance Real</span>
+                <span class="font-condensed text-xl font-bold text-steph-black">85%</span>
+              </div>
+              <div class="flex justify-between items-center py-3 border-b border-steph-bg">
+                <span class="text-xs uppercase font-bold tracking-wider text-steph-gray">Horas Consumidas</span>
+                <span class="font-condensed text-xl font-bold text-steph-black">124.5 H</span>
+              </div>
+              <button onclick="alert('Iniciando descarga de reporte...')" class="w-full mt-4 bg-steph-black text-steph-white border border-steph-black py-2 px-4 text-xs font-bold uppercase tracking-widest hover:bg-steph-dark hover:border-steph-dark transition-colors flex justify-center items-center gap-2">
+                <i class="ti ti-file-export"></i> Exportar Reporte
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISTA: VENTAS (Placeholder) -->
+      <div id="ventas" class="tab-content max-w-6xl mx-auto">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-4 h-[3px] bg-steph-black"></div>
+          <h3 class="font-barlow text-xl font-bold tracking-[0.15em] uppercase text-steph-black">Módulo de Ventas</h3>
+        </div>
+        <div class="bg-steph-white border border-steph-industrial p-12 text-center shadow-sm">
+          <i class="ti ti-chart-bar text-4xl text-steph-industrial mb-4"></i>
+          <p class="text-sm font-bold uppercase tracking-widest text-steph-gray">Estructura de ventas y facturación irá aquí</p>
+        </div>
+      </div>
+
+      <!-- VISTA: COSTOS (Placeholder) -->
+      <div id="costos" class="tab-content max-w-6xl mx-auto">
+         <div class="flex items-center gap-3 mb-6">
+          <div class="w-4 h-[3px] bg-steph-black"></div>
+          <h3 class="font-barlow text-xl font-bold tracking-[0.15em] uppercase text-steph-black">Módulo de Costos</h3>
+        </div>
+        <div class="bg-steph-white border border-steph-industrial p-12 text-center shadow-sm">
+          <i class="ti ti-receipt-2 text-4xl text-steph-industrial mb-4"></i>
+          <p class="text-sm font-bold uppercase tracking-widest text-steph-gray">Tabla de registro de gastos operativos irá aquí</p>
+        </div>
+      </div>
+
+      <!-- VISTA: HORAS HH (Placeholder) -->
+      <div id="horas" class="tab-content max-w-6xl mx-auto">
+         <div class="flex items-center gap-3 mb-6">
+          <div class="w-4 h-[3px] bg-steph-black"></div>
+          <h3 class="font-barlow text-xl font-bold tracking-[0.15em] uppercase text-steph-black">Control de Horas Hombre</h3>
+        </div>
+        <div class="bg-steph-white border border-steph-industrial p-12 text-center shadow-sm">
+          <i class="ti ti-user-clock text-4xl text-steph-industrial mb-4"></i>
+          <p class="text-sm font-bold uppercase tracking-widest text-steph-gray">Registro de carga horaria irá aquí</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // Lógica para cambiar de pestañas (Tabs)
+    const navButtons = document.querySelectorAll('.nav-item');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    navButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        // 1. Quitar la clase 'active' de todos los botones y contenidos
+        navButtons.forEach(btn => {
+          btn.classList.remove('active');
+          btn.classList.replace('text-steph-white', 'text-steph-dark');
+          btn.classList.remove('bg-steph-black');
+        });
+        tabContents.forEach(content => content.classList.remove('active'));
+
+        // 2. Agregar 'active' al botón clicado
+        button.classList.add('active');
+        button.classList.replace('text-steph-dark', 'text-steph-white');
+        
+        // 3. Mostrar el contenido correspondiente
+        const targetId = button.getAttribute('data-target');
+        document.getElementById(targetId).classList.add('active');
+      });
+    });
+
+    // Inicialización del gráfico
+    document.addEventListener('DOMContentLoaded', function() {
+      const ctx = document.getElementById('costChart').getContext('2d');
+      Chart.defaults.font.family = "'Barlow', sans-serif";
+      Chart.defaults.color = '#777777';
+      
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'],
+          datasets: [
+            { label: 'Presupuesto Planificado', data: [200, 450, 700, 1000, 1250, 1500], backgroundColor: '#C5C7C4', barThickness: 16 },
+            { label: 'Costo Real Incurrido', data: [250, 520, 800, 1200, 1600, 1750], backgroundColor: '#000000', barThickness: 16 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { usePointStyle: false, boxWidth: 12, boxHeight: 12, font: { size: 11, weight: '600' } } },
+            tooltip: { backgroundColor: '#ffffff', titleColor: '#000000', bodyColor: '#444444', borderColor: '#C5C7C4', borderWidth: 1, cornerRadius: 0, padding: 10, titleFont: { family: 'Barlow Condensed', size: 14 } }
+          },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#f4f5f5', drawBorder: false }, ticks: { callback: function(value) { return '$' + value + 'k'; }, font: { size: 11 } } },
+            x: { grid: { display: false, drawBorder: false }, ticks: { font: { size: 11, weight: '600' } } }
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
