@@ -127,11 +127,11 @@ tr:hover td{background:var(--bg2)}
 </head>
 <body>
 
+<div class="app">
 <div class="sidebar">
   <div class="sb-logo">
-    <div style="width:40px;height:40px;background-color:#0a0a0a;border-radius:6px;display:flex;align-items:center;justify-content:center;border: 1px solid #1a1a1a;">
-      <img src="/logo.jpg" style="height:20px;filter:invert(1) brightness(0.85);object-fit:contain;opacity:0.9;"> 
-    </div>
+    <!-- LOGO: reemplazá esta línea por tu imagen cuando la tengas en /public/logo.jpg -->
+    <img src="/logo.jpg" style="height:32px;filter:invert(1) brightness(0.88);object-fit:contain"> 
   </div>
   <div class="sb-sec">Proyectos</div>
   <div class="sb-list" id="sb-list"></div>
@@ -139,7 +139,6 @@ tr:hover td{background:var(--bg2)}
     <i class="ti ti-plus" style="font-size:12px" aria-hidden="true"></i>
     <span>Nuevo proyecto</span>
   </div>
-</div>
   <div class="sb-nav">
     <div class="ni active" id="nav-dashboard" onclick="go('dashboard')"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Dashboard</div>
     <div class="ni" id="nav-ventas" onclick="go('ventas')"><i class="ti ti-chart-bar" aria-hidden="true"></i>Ventas</div>
