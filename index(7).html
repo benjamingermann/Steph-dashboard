@@ -508,25 +508,10 @@ function listenRT(){
 }
 
 // --- Detectar login/logout automáticamente ---
-// ⚠️ PONETE LOS EMAILS REALES DE USTEDES DOS ACÁ ABAJO
-const ALLOWED = [
-  'tu-email@gmail.com',
-  'email-compañero@gmail.com'
-];
-
 AUTH.onAuthStateChanged(async user=>{
   setChip(user);
-  if(user){
-    if(!ALLOWED.includes(user.email.toLowerCase())){
-      document.getElementById('login-err').textContent='No tenés acceso. Contactá al administrador.';
-      AUTH.signOut();
-      return;
-    }
-    showLoading();await ls();listenRT();showApp();
-  }else{
-    if(unsubSnap){unsubSnap();unsubSnap=null;}
-    showLogin();
-  }
+  if(user){showLoading();await ls();listenRT();showApp();}
+  else{if(unsubSnap){unsubSnap();unsubSnap=null;}showLogin();}
 });
 // ======================================================
 
