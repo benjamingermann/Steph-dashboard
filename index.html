@@ -617,10 +617,24 @@ function listenRT(){
 }
 
 // --- Detectar login/logout automáticamente ---
+const ALLOWED = [
+  'vpascuali@steph.com.ar', 
+  'benjamingermann26@gmail.com'
+];
+
 AUTH.onAuthStateChanged(async user=>{
   setChip(user);
-  if(user){showLoading();await ls();listenRT();showApp();}
-  else{if(unsubSnap){unsubSnap();unsubSnap=null;}showLogin();}
+  if(user){
+    if(!ALLOWED.includes(user.email.toLowerCase())){
+      document.getElementById('login-err').textContent='No tenés acceso. Contactá al administrador.';
+      AUTH.signOut();
+      return;
+    }
+    showLoading();await ls();listenRT();showApp();
+  }else{
+    if(unsubSnap){unsubSnap();unsubSnap=null;}
+    showLogin();
+  }
 });
 // ======================================================
 
