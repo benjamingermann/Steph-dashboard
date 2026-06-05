@@ -618,7 +618,7 @@ function listenRT(){
 
 // --- Detectar login/logout automáticamente ---
 const ALLOWED = [
-  'vpascuali@steph.com.ar', 
+  'valentinpascuali13@gmail.com', 
   'benjamingermann26@gmail.com'
 ];
 
@@ -738,49 +738,7 @@ function ptime(v){if(v==null||v==='')return '';if(typeof v==='string'&&/^\d{1,2}
 function pnum(v){const n=parseFloat(v);return isNaN(n)?'':n;}
 function pround(n,d){if(n==null||isNaN(n))return '';const f=Math.pow(10,d||0);return Math.round(n*f)/f;}
 function prodImport(){const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls';inp.onchange=e=>{const file=e.target.files[0];if(!file)return;loadXLSX().then(XLSX=>{const rd=new FileReader();rd.onload=ev=>{try{const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});prodParse(XLSX,wb);ss();rProd();}catch(err){alert('Error al leer el Excel: '+err.message);}};rd.readAsArrayBuffer(file);}).catch(err=>alert(err.message));};inp.click();}
-function prodParse(XLSX,wb){
-  const pr=prodInit();
-  const pk=PROCS.map(x=>x.k);
-  // Buscar hoja sin importar mayúsculas/minúsculas
-  const sheetName=name=>Object.keys(wb.Sheets).find(k=>k.toLowerCase()===name.toLowerCase())||null;
-  const s1key=sheetName('Registro por Lote')||sheetName('Registro por lote');
-  if(s1key){
-    const rows=XLSX.utils.sheet_to_json(wb.Sheets[s1key],{header:1,raw:true,defval:''});
-    const SKIP=['n° lote','n°lote','lote','totales','total','promedios',''];
-    // Buscar primera fila de datos dinámicamente
-    let start=0;
-    for(let i=0;i<rows.length;i++){const v=String(rows[i][0]||'').trim().toLowerCase();if(v&&!SKIP.some(s=>v.includes(s))&&!v.startsWith('steph')&&!v.startsWith('registro')&&!v.startsWith('proceso')){start=i;break;}}
-    const L=[];
-    for(let i=start;i<rows.length;i++){
-      const r=rows[i];if(!r)continue;
-      const n=String(r[0]||'').trim();
-      if(!n||/^(totales|total|promedios)/i.test(n))continue;
-      const l=prodBlankLote();
-      l.nLote=n;
-      // Fecha: puede ser número serial de Excel o string
-      const fd=r[1];
-      if(fd&&!isNaN(Number(fd))){const d=new Date(Math.round((Number(fd)-25569)*86400*1000));l.fecha=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-      else l.fecha=fd||'';
-      l.cant=r[2]||'';
-      for(let p=0;p<5;p++){l[pk[p]].ini=ptime(r[3+p*2]);l[pk[p]].fin=ptime(r[4+p*2]);}
-      l.obs=r[21]||'';
-      L.push(l);
-    }
-    if(L.length)pr.lotes=L;
-  }
-  const s2key=sheetName('Seguimiento '+PTOTAL+' Racks')||sheetName('Seguimiento 60 Racks');
-  if(s2key){
-    const rr=XLSX.utils.sheet_to_json(wb.Sheets[s2key],{header:1,raw:false,defval:''});
-    // Buscar primera fila de datos (donde col 0 es un número = número de rack)
-    let rStart=0;
-    for(let i=0;i<rr.length;i++){if(!isNaN(parseInt(rr[i][0]))&&String(rr[i][0]).trim()!==''){rStart=i;break;}}
-    for(let k=0;k<PTOTAL;k++){
-      const row=rr[rStart+k];if(!row)continue;
-      pr.racks[k].lote=row[1]||'';
-      for(let e=0;e<5;e++)pr.racks[k].e[e]=String(row[2+e]).trim()==='✓';
-    }
-  }
-}
+function prodParse(XLSX,wb){const pr=prodInit();const pk=PROCS.map(x=>x.k);const s1=wb.Sheets['Registro por Lote'];if(s1){const rows=XLSX.utils.sheet_to_json(s1,{header:1,raw:false,defval:''});const L=[];for(let i=7;i<rows.length;i++){const r=rows[i];if(!r)continue;const n=r[0];if(!n||/TOTAL/i.test(String(n)))continue;const l=prodBlankLote();l.nLote=n;l.fecha=r[1]||'';l.cant=r[2]||'';for(let p=0;p<5;p++){l[pk[p]].ini=ptime(r[3+p*2]);l[pk[p]].fin=ptime(r[4+p*2]);}l.obs=r[21]||'';L.push(l);}if(L.length)pr.lotes=L;}const s2=wb.Sheets['Seguimiento '+PTOTAL+' Racks']||wb.Sheets['Seguimiento 60 Racks'];if(s2){const rr=XLSX.utils.sheet_to_json(s2,{header:1,raw:false,defval:''});for(let k=0;k<PTOTAL;k++){const row=rr[5+k];if(!row)continue;pr.racks[k].lote=row[1]||'';for(let e=0;e<5;e++)pr.racks[k].e[e]=String(row[2+e]).trim()==='✓';}}}
 function prodExport(){const pr=prodInit();loadXLSX().then(XLSX=>{const wb=XLSX.utils.book_new();const h1=[['STEPH – COVER ENGINE | CONTROL DE FABRICACIÓN | '+PTOTAL+' UNIDADES'],[],[],[],['N° Lote','Fecha','Racks','CM Ini','CM Fin','Láser Ini','Láser Fin','Router Ini','Router Fin','Sold Ini','Sold Fin','Unión Ini','Unión Fin','T.CM','T.Láser','T.Router','T.Sold','T.Unión','Total min','Total hs','Racks/h','Obs.']];pr.lotes.forEach((l,idx)=>{const Rr=6+idx;const proc=[];PROCS.forEach(x=>proc.push(l[x.k].ini,l[x.k].fin));h1.push([l.nLote,l.fecha,pnum(l.cant)].concat(proc).concat([{f:`IF(OR(E${Rr}="",D${Rr}=""),"",ROUND((E${Rr}-D${Rr})*1440,0))`},{f:`IF(OR(G${Rr}="",F${Rr}=""),"",ROUND((G${Rr}-F${Rr})*1440,0))`},{f:`IF(OR(I${Rr}="",H${Rr}=""),"",ROUND((I${Rr}-H${Rr})*1440,0))`},{f:`IF(OR(K${Rr}="",J${Rr}=""),"",ROUND((K${Rr}-J${Rr})*1440,0))`},{f:`IF(OR(M${Rr}="",L${Rr}=""),"",ROUND((M${Rr}-L${Rr})*1440,0))`},{f:`SUM(N${Rr}:R${Rr})`},{f:`IF(S${Rr}="","",ROUND(S${Rr}/60,2))`},{f:`IF(OR(C${Rr}="",T${Rr}="",T${Rr}=0),"",ROUND(C${Rr}/T${Rr},1))`},l.obs]));});XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(h1),'Registro por Lote');const h2=[['SEGUIMIENTO INDIVIDUAL – '+PTOTAL+' COVER ENGINE'],[],[],[],['N° Rack','Lote','CM ✓','Láser ✓','Router ✓','Sold ✓','Unión ✓','Etapas','Estado']];pr.racks.forEach(r=>{const ok=r.e.filter(Boolean).length;h2.push([r.n,r.lote].concat(r.e.map(x=>x?'✓':'')).concat([ok,ok===5?'✅ LISTO':ok===0?'⏳ PENDIENTE':'🔧 EN PROCESO '+ok+'/5']));});XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(h2),'Seguimiento '+PTOTAL+' Racks');const R=prodResumen();const h3=[['RESUMEN EJECUTIVO – COVER ENGINE x'+PTOTAL],[],['Proceso','Prom. (min)','Mín.','Máx.','% del Total','Etapa crítica']];R.rows.forEach(r=>h3.push([r.n,pround(r.avg),r.min,r.max,r.pct!=null?pround(r.pct,1)+'%':'',r.bott?'⚠️ CUELLO DE BOTELLA':'']));h3.push(['TOTAL PROMEDIO POR RACK',pround(R.total),(R.total!=null?pround(R.total/60,2):'')+' hs']);h3.push([]);h3.push(['PROYECCIÓN PARA '+PTOTAL+' RACKS']);h3.push(['Tiempo total (serie, min)','','','',pround(R.serieMin)]);h3.push(['Tiempo total (serie, hs)','','','',pround(R.serieHs,1)]);h3.push(['Con paralelo (−40%, hs)','','','',pround(R.parHs,1)]);h3.push(['Racks completados','','','',R.done]);h3.push(['% Avance pedido','','','',pround(R.avance,1)+'%']);XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(h3),'Resumen Ejecutivo');XLSX.writeFile(wb,'CoverEngine_'+PTOTAL+'Racks.xlsx');}).catch(err=>alert(err.message));}
 /* =================== FIN PRODUCCIÓN · COVER ENGINE =================== */
 
