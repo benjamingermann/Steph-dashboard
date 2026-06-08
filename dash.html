@@ -1,0 +1,206 @@
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* TEMA TESLA / SPACEX - RAL 7035 */
+  --bg0: #f4f5f5; /* Fondo general ultra claro */
+  --bg1: #ffffff; /* Paneles blancos */
+  --bg2: #f0f0f0; /* Hover */
+  --bg3: #e0e0e0;
+  --border: #e2e2e2;
+  --border2: #d0d0d0;
+  --txt1: #000000; /* Texto principal oscuro */
+  --txt2: #444444; 
+  --txt3: #777777;
+  
+  /* Paleta Monocromática + RAL 7035 + Rojo Alerta */
+  --acc: #000000;       /* Negro (Principal) */
+  --acc2: #444444;      /* Gris oscuro */
+  --acc3: #888888;      /* Gris medio */
+  --acc4: #C5C7C4;      /* RAL 7035 */
+  --acc5: #e0e0e0;      /* Gris muy claro */
+  --danger: #E31937;    /* Rojo corporativo/alerta */
+  
+  --font:'Barlow',sans-serif;
+  --fontc:'Barlow Condensed',sans-serif;
+}
+.app{display:flex;height:600px;background:var(--bg0);font-family:var(--font);color:var(--txt1);overflow:hidden}
+.sidebar{width:210px;min-width:210px;background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sb-brand{padding:20px 14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:8px;flex-shrink:0; background: var(--acc); color: white;}
+.sb-bname{font-family:var(--font);font-size:22px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#ffffff}
+.sb-sec{padding:12px 12px 4px;font-family:var(--fontc);font-size:11px;font-weight:600;letter-spacing:0.12em;color:var(--txt3);text-transform:uppercase;flex-shrink:0}
+.sb-plist{flex:1;overflow-y:auto;padding:2px 6px 4px}
+.sb-p{display:flex;align-items:center;gap:7px;padding:7px 7px;cursor:pointer;margin-bottom:1px;transition:background 0.1s; border-radius: 0px;}
+.sb-p:hover{background:var(--bg2)}
+.sb-p.active{background:var(--bg3);border-left:3px solid var(--acc);padding-left:4px}
+.sb-dot{width:6px;height:6px;flex-shrink:0; border-radius:0;}
+.sb-pinfo{flex:1;min-width:0}
+.sb-pname{font-size:12px;font-weight:600;color:var(--txt1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; text-transform: uppercase; letter-spacing: 0.05em;}
+.sb-pmeta{font-size:11px;color:var(--txt3);margin-top:1px; font-family: var(--fontc);}
+.sb-new{margin:4px 6px 6px;border:1px dashed var(--border2);padding:7px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;font-size:12px;color:var(--txt3);transition:all 0.12s;flex-shrink:0; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;}
+.sb-new:hover{border-color:var(--acc);color:var(--acc);background:#f0f0f0}
+.sb-nav{padding:6px;border-top:1px solid var(--border);flex-shrink:0}
+.sb-ni{display:flex;align-items:center;gap:7px;padding:8px 7px;cursor:pointer;font-size:12px;color:var(--txt2);transition:background 0.1s;margin-bottom:1px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;}
+.sb-ni:hover{background:var(--bg2);color:var(--txt1)}
+.sb-ni.active{background:var(--acc);color:#ffffff;}
+.sb-ni i{font-size:15px;width:17px;text-align:center}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:var(--bg1);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:10px;height:56px;flex-shrink:0}
+.tb-title{font-family:var(--font);font-size:18px;font-weight:600;color:var(--txt1);letter-spacing: 0.05em; text-transform: uppercase;}
+.tb-sub{font-size:11px;color:var(--txt3); letter-spacing: 0.05em; text-transform: uppercase;}
+.content{flex:1;overflow-y:auto;background:var(--bg0); padding: 24px;}
+.page{display:none;animation:fi 0.15s ease}
+.page.active{display:block}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.mc{background:var(--bg1);border:1px solid var(--border);padding:16px;position:relative;overflow:hidden; border-radius: 0;}
+.mc-ac{position:absolute;top:0;left:0;right:0;height:3px}
+.mc-lbl{font-family:var(--fontc);font-size:11px;font-weight:600;letter-spacing:0.1em;color:var(--txt3);text-transform:uppercase;margin-bottom:8px}
+.mc-val{font-family:var(--fontc);font-size:24px;font-weight:600;color:var(--txt1);line-height:1;margin-bottom:4px}
+.mc-sub{font-size:11px;color:var(--txt3); text-transform: uppercase; letter-spacing: 0.05em;}
+.mc-bar{height:2px;background:var(--bg3);margin-top:10px;overflow:hidden}
+.mc-bf{height:100%;transition:width 0.5s}
+.card{background:var(--bg1);border:1px solid var(--border);padding:20px;margin-bottom:16px; border-radius: 0;}
+.ch{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.ct{font-family:var(--font);font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--txt1);display:flex;align-items:center;gap:8px}
+.cl{width:12px;height:12px; background: var(--acc4);} /* Cuadrado RAL 7035 por defecto */
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-bottom:16px}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:12px}
+@media(max-width:500px){.two,.three{grid-template-columns:1fr}}
+.fl{display:block;font-family:var(--fontc);font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--txt2);margin-bottom:6px}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--border2);background:var(--bg1);color:var(--txt1);font-size:13px;font-family:var(--font); border-radius: 0; transition: border-color 0.2s;}
+input:focus,select:focus{outline:none;border-color:var(--acc);}
+select option{background:var(--bg1)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--acc);background:var(--bg1);color:var(--acc);font-family:var(--font);transition:all 0.15s; text-transform: uppercase; letter-spacing: 0.08em; border-radius: 0;}
+.btn:hover{background:var(--bg2)}
+.btn:active{transform:scale(0.98)}
+.btn-a{background:var(--acc);color:#ffffff;border-color:var(--acc)}.btn-a:hover{background:#333333}
+.btn-b{background:var(--acc2);color:#ffffff;border-color:var(--acc2)}.btn-b:hover{background:#222222}
+.btn-g{background:var(--acc4);color:#000000;border-color:var(--acc4)}.btn-g:hover{background:#a3a5a2} /* RAL 7035 btn */
+.btn-v{background:var(--acc3);color:#ffffff;border-color:var(--acc3)}.btn-v:hover{background:#555555}
+.btn-d{background:transparent;color:var(--danger);border-color:var(--danger)}.btn-d:hover{background:var(--danger); color:#fff;}
+.btn-sm{padding:4px 10px;font-size:11px}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+th{text-align:left;font-family:var(--fontc);font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--txt3);padding:10px 8px;border-bottom:2px solid var(--acc)}
+td{padding:10px 8px;border-bottom:1px solid var(--border);color:var(--txt1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg0)}
+.pill{display:inline-block;padding:3px 8px;font-family:var(--fontc);font-size:11px;font-weight:600;letter-spacing:0.05em;white-space:nowrap; text-transform: uppercase; border-radius: 0;}
+.pt{background:var(--acc);color:#ffffff;}
+.pb{background:var(--acc2);color:#ffffff;}
+.pa{background:var(--acc4);color:#000000;} /* RAL 7035 Badge */
+.pr{background:var(--danger);color:#ffffff;}
+.pv{background:var(--acc3);color:#ffffff;}
+.pc{background:var(--acc5);color:#000000;}
+.pg{background:#ffffff;color:var(--txt2);border:1px solid var(--border2)}
+.krow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.krow:last-child{border-bottom:none}
+.klbl{font-size:12px;color:var(--txt2);display:flex;align-items:center;gap:6px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;}
+.kval{font-family:var(--fontc);font-size:18px;font-weight:600}
+.cw{position:relative;width:100%;height:200px}
+.empty{text-align:center;padding:3rem;color:var(--txt3);font-size:13px; text-transform: uppercase; letter-spacing: 0.1em;}
+.empty i{font-size:32px;opacity:0.5;display:block;margin-bottom:10px; color: var(--acc4);}
+.div{border:none;border-top:1px solid var(--border);margin:16px 0}
+.fr{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.alrt{padding:12px 16px;font-size:13px;margin-bottom:16px;display:flex;align-items:center;gap:10px;border:1px solid; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;}
+.ag{background:#ffffff;color:var(--acc);border-color:var(--acc)}
+.aa{background:var(--bg0);color:var(--acc2);border-color:var(--acc2)}
+.ar{background:#ffffff;color:var(--danger);border-color:var(--danger)}
+.sr{display:flex;justify-content:space-between;margin-top:12px;font-size:12px;flex-wrap:wrap;gap:8px; text-transform: uppercase; letter-spacing: 0.05em;}
+.si{color:var(--txt3)}.si strong{color:var(--acc);font-weight:600}
+.npmw{background:var(--bg1);border:1px solid var(--acc);padding:24px;margin-bottom:16px; border-radius: 0;}
+.td{font-family:var(--font);font-size:16px;font-weight:600;color:var(--txt1);margin-bottom:20px;display:flex;align-items:center;gap:8px; text-transform: uppercase; letter-spacing: 0.1em;}
+</style>
+
+<div class="app">
+<div class="sidebar">
+  <div class="sb-brand">
+    <img src="logo.jpg" alt="STEPH" style="height: 70px; filter: invert(1); margin: -15px 0;">
+  </div>
+  <div class="sb-sec">Proyectos</div>
+  <div class="sb-plist" id="sb-list"></div>
+  <div class="sb-new" id="btn-np" onclick="toggleNP()"><i class="ti ti-plus" aria-hidden="true" style="font-size:14px"></i><span>Nuevo proyecto</span></div>
+  <div class="sb-nav">
+    <div class="sb-ni active" id="nav-dashboard" onclick="goTab('dashboard')"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Dashboard</div>
+    <div class="sb-ni" id="nav-ventas" onclick="goTab('ventas')"><i class="ti ti-chart-bar" aria-hidden="true"></i>Ventas</div>
+    <div class="sb-ni" id="nav-costos" onclick="goTab('costos')"><i class="ti ti-receipt-2" aria-hidden="true"></i>Costos</div>
+    <div class="sb-ni" id="nav-horas" onclick="goTab('horas')"><i class="ti ti-user-clock" aria-hidden="true"></i>Horas HH</div>
+    <div class="sb-ni" id="nav-estructura" onclick="goTab('estructura')"><i class="ti ti-building-skyscraper" aria-hidden="true"></i>Estructura</div>
+    <div class="sb-ni" id="nav-tiempos" onclick="goTab('tiempos')"><i class="ti ti-timer" aria-hidden="true"></i>Tiempos</div>
+    <div class="sb-ni" id="nav-config" onclick="goTab('config')"><i class="ti ti-settings" aria-hidden="true"></i>Config.</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div style="flex:1">
+      <div class="tb-title" id="tb-title">Selecciona un proyecto</div>
+      <div class="tb-sub" id="tb-sub">STEPH SYSTEM</div>
+    </div>
+    <div id="tb-est"></div>
+  </div>
+  <div class="content">
+
+    <div id="page-new" class="page">
+      <div class="npmw">
+        <div class="td"><i class="ti ti-folder-plus" aria-hidden="true" style="color:var(--acc)"></i>Nuevo proyecto</div>
+        <div class="three">
+          <div><label class="fl">Nombre</label><input id="np-n" placeholder="NOMBRE DEL PROYECTO"></div>
+          <div><label class="fl">Código</label><input id="np-c" placeholder="PRY-001"></div>
+          <div><label class="fl">Estado</label><select id="np-e"><option value="activo">Activo</option><option value="planificado">Planificado</option><option value="pausado">Pausado</option></select></div>
+        </div>
+        <div style="margin-top:12px"><label class="fl">Descripción</label><input id="np-d" placeholder="BREVE DESCRIPCIÓN"></div>
+        <div class="three" style="margin-top:12px">
+          <div><label class="fl">Presupuesto costo ($)</label><input type="number" id="np-p" placeholder="0.00" min="0"></div>
+          <div><label class="fl">Precio venta ($)</label><input type="number" id="np-v" placeholder="0.00" min="0"></div>
+          <div><label class="fl">Color Ind.</label><select id="np-col"><option value="#000000">Negro</option><option value="#C5C7C4">Gris RAL 7035</option><option value="#444444">Gris Oscuro</option><option value="#E31937">Rojo</option></select></div>
+        </div>
+        <div style="margin-top:20px;display:flex;gap:12px">
+          <button class="btn btn-a" onclick="createP()">Crear Proyecto</button>
+          <button class="btn" onclick="cancelNP()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="page-empty" class="page active">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:500px;gap:16px">
+        <i class="ti ti-rocket" aria-hidden="true" style="font-size:54px;color:var(--txt3)"></i>
+        <div style="font-family:var(--font);font-size:20px;font-weight:600;color:var(--txt1); letter-spacing: 0.1em; text-transform: uppercase;">Sistema Inicializado</div>
+        <div style="font-size:13px;color:var(--txt3); text-transform: uppercase; letter-spacing: 0.05em;">Crea un proyecto para comenzar el seguimiento</div>
+        <button class="btn btn-a" style="margin-top:12px" onclick="toggleNP()">Nuevo proyecto</button>
+      </div>
+    </div>
+
+    <div id="page-dashboard" class="page">
+      <div id="d-alert"></div>
+      <div class="mg" id="d-mg"></div>
+      <div class="two">
+        <div class="card">
+          <div class="ch"><div class="ct"><div class="cl" style="background:var(--acc2)"></div>Costos vs presupuesto</div></div>
+          <div class="cw"><canvas id="ch-costo" role="img" aria-label="Costos vs presupuesto">Costos vs presupuesto</canvas></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct"><div class="cl" style="background:var(--acc)"></div>Margen del proyecto</div></div>
+          <div class="cw"><canvas id="ch-margen" role="img" aria-label="Margen del proyecto">Margen</canvas></div>
+        </div>
+      </div>
+      <div class="two">
+        <div class="card">
+          <div class="ch"><div class="ct"><div class="cl" style="background:var(--acc4)"></div>Distribución de costos</div></div>
+          <div id="dist-leg" style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--txt2);margin-bottom:12px; font-weight: 600; text-transform: uppercase;"></div>
+          <div class="cw" style="height:180px"><canvas id="ch-dist" role="img" aria-label="Distribución de costos">Distribución</canvas></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct"><div class="cl" style="background:var(--acc)"></div>Indicadores clave</div></div>
+          <div id="kpi-panel"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct"><div class="cl" style="background:var(--danger)"></div>Evolución acumulada</div></div>
+        <div class="cw" style="height:180px"><canvas id="ch-line" role="img" aria-label="Evolución costos acumulados">Evolución</canvas></div>
+      </div>
+    </div>
+
+    <div id="page-ventas" class="page">
+      <div class

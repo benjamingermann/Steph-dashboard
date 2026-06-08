@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STEPH SYSTEM - V5 Pro</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            steph: {
+              bg: '#f4f5f5', white: '#ffffff', black: '#000000', dark: '#444444',
+              gray: '#777777', industrial: '#C5C7C4', danger: '#E31937', 
+              accent: '#378ADD', accent2: '#5DCAA5'
+            }
+          },
+          fontFamily: {
+            barlow: ['Barlow', 'sans-serif'],
+            condensed: ['Barlow Condensed', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { border-radius: 0px !important; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f4f5f5; }
+    ::-webkit-scrollbar-thumb { background: #C5C7C4; }
+    ::-webkit-scrollbar-thumb:hover { background: #777777; }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: slideIn 0.2s ease-out; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .nav-item.active { background-color: #000000; color: #ffffff; border-left: 4px solid #C5C7C4; padding-left: 0.5rem; }
+    .nav-item.active i { color: #ffffff; }
+    
+    /* Inputs brutalistas */
+    .input-steph { width: 100%; border: 1px solid #C5C7C4; background-color: #f4f5f5; padding: 0.5rem 0.75rem; font-size: 0.875rem; transition: all 0.1s; }
+    .input-steph:focus { outline: none; border-color: #000000; background-color: #ffffff; box-shadow: 2px 2px 0px #000000; }
+  </style>
+</head>
+<body class="bg-steph-bg font-barlow text-steph-black h-screen flex overflow-hidden">
+
+  <aside class="w-[230px] min-w-[230px] bg-steph-white border-r border-steph-industrial flex flex-col z-10 shadow-xl">
+    <div class="bg-steph-black p-5 flex flex-col items-center justify-center border-b border-steph-black">
+      <h1 class="font-condensed text-steph-white text-3xl font-bold tracking-[0.2em] uppercase">Steph</h1>
+      <span class="text-steph-industrial text-[10px] tracking-widest uppercase mt-1">System Control</span>
+    </div>
+
+    <div class="p-4 border-b border-steph-industrial flex-shrink-0 bg-steph-white">
+      <div class="flex justify-between items-center mb-3">
+        <p class="font-condensed text-[11px] font-semibold tracking-[0.15em] text-steph-gray uppercase">Proyectos</p>
+        <button onclick="toggleNP()" id="btn-np" class="text-steph-black hover:text-steph-danger transition-colors"><i class="ti ti-plus"></i></button>
+      </div>
+      <div id="sb-list" class="max-h-[180px] overflow-y-auto space-y-1 pr-1"></div>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto p-3 flex flex-col gap-1" id="main-nav">
+      <button onclick="goTab('dashboard')" id="nav-dashboard" class="nav-item active flex items-center gap-3 p-2 text-steph-dark hover:bg-steph-bg text-xs uppercase font-bold tracking-wider transition-all w-full text-left">
+        <i class="ti ti-layout-dashboard text-lg"></i> Dashboard
+      </button>
+      <button onclick="goTab('costos')" id="nav-costos" class="nav-item flex items-center gap-3 p-2 text-steph-dark hover:bg-steph-bg text-xs uppercase font-bold tracking-wider transition-all w-full text-left">
+        <i class="ti ti-receipt-2 text-lg"></i> Costos
+      </button>
+      <button onclick="goTab('ventas')" id="nav-ventas" class="nav-item flex items-center gap-3 p-2 text-steph-dark hover:bg-steph-bg text-xs uppercase font-bold tracking-wider transition-all w-full text-left">
+        <i class="ti ti-chart-bar text-lg"></i> Ventas
+      </button>
+    </nav>
+  </aside>
+
+  <main class="flex-1 flex flex-col min-w-0 relative bg-steph-bg">
+    
+    <header class="h-[60px] bg-steph-white border-b border-steph-industrial px-8 flex items-center justify-between shrink-0 sticky top-0 z-20">
+      <div>
+        <h2 id="tb-title" class="font-barlow text-xl font-bold tracking-[0.1em] uppercase text-steph-black">Seleccioná un proyecto</h2>
+        <p id="tb-sub" class="text-[11px] text-steph-gray tracking-widest uppercase font-semibold">Esperando selección...</p>
+      </div>
+      <div id="tb-est" class="flex items-center gap-4"></div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-6 md:p-10 relative">
+
+      <div id="page-empty" class="tab-content active max-w-6xl mx-auto flex flex-col items-center justify-center h-full opacity-70">
+        <i class="ti ti-folders text-8xl text-steph-industrial mb-6"></i>
+        <h3 class="font-condensed text-3xl font-bold tracking-widest text-steph-black uppercase">Workspace Vacío</h3>
+        <p class="text-sm text-steph-gray mt-2 font-medium uppercase tracking-wider">Inicializá tu primer proyecto para comenzar</p>
+        <button onclick="toggleNP()" class="mt-6 bg-steph-black text-steph-white px-8 py-3 text-xs font-bold uppercase tracking-widest hover:bg-steph-dark transition-colors flex items-center gap-2">
+          <i class="ti ti-plus"></i> Crear Proyecto
+        </button>
+      </div>
+
+      <div id="page-new" class="tab-content max-w-3xl mx-auto">
+        <div class="bg-steph-white border border-steph-black p-8 shadow-[8px_8px_0px_#C5C7C4]">
+          <h3 class="font-condensed text-2xl font-bold tracking-[0.1em] uppercase text-steph-black mb-6 border-b-2 border-steph-black pb-2">Registrar Nuevo Proyecto</h3>
+          
+          <div class="grid grid-cols-2 gap-6">
+            <div class="col-span-2 md:col-span-1">
+              <label class="block text-[11px] font-bold uppercase tracking-widest text-steph-dark mb-1">Nombre del Proyecto</label>
+              <input type="text" id="np-n" class="input-steph" placeholder="Ej: Obra Central">
+            </div>
+            <div class="col-span-2 md:col-span-1">
+              <label class="block text-[11px] font-bold uppercase tracking-widest text-steph-dark mb-1">Código de Referencia</label>
+              <input type="text" id="np-c" class="input-steph" placeholder="PRY-001">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-[11px] font-bold uppercase tracking-widest text-steph-dark mb-1">Descripción Breve</label>
+              <input type="text" id="np-d" class="input-steph" placeholder="Detalles operativos...">
+            </div>
+            <div class="col-span-2 md:col-span-1">
+              <label class="block text-[11px] font-bold uppercase tracking-widest text-steph-dark mb-1">Presupuesto Estimado ($)</label>
+              <input type="number" id="np-p" class="input-steph" placeholder="0.00">
+            </div>
+            <div class="col-span-2 md:col-span-1">
+              <label class="block text-[11px] font-bold uppercase tracking-widest text-steph-dark mb-1">Precio Venta Contrato ($)</label>
+              <input type="number" id="np-v" class="input-steph" placeholder="0.00">
+            </div>
+            
+            <div class="col-span-2 mt-4 flex gap-4 pt-4 border-t border-steph-industrial">
+              <button onclick="createP()" class="bg-steph-black text-steph-white px-8 py-3 text-xs font-bold uppercase tracking-widest hover:bg-steph-dark transition-all hover:-translate-y-1">Generar Alta</button>
+              <button onclick="cancelNP()" class="bg-steph-bg border border-steph-industrial text-steph-dark px-8 py-3 text-xs font-bold uppercase tracking-widest hover:border-steph-black transition-all">Descartar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="page-dashboard" class="tab-content max-w-6xl mx-auto space-y-8">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-steph-white border border-steph-black p-6 relative group hover:-translate-y-1 transition-transform">
+            <div class="absolute top-0 left-0 w-full h-[4px] bg-steph-black"></div>
+            <h3 class="font-condensed text-[13px] font-bold tracking-[0.15em] text-steph-gray uppercase mb-3">Costo Incurrido Total</h3>
+            <p id="dash-costo" class="font-condensed text-4xl lg:text-5xl font-bold text-steph-black leading-none mb-3">$0</p>
+            <div class="flex justify-between items-center text-[11px] uppercase tracking-wider font-bold text-steph-dark">
+              <span id="dash-presup">Presupuesto: $0</span>
+              <span id="dash-pct-c">0%</span>
+            </div>
+            <div class="w-full bg-steph-bg h-2 mt-2 border border-steph-industrial"><div id="dash-bar-c" class="bg-steph-black h-full transition-all duration-500" style="width:0%"></div></div>
+          </div>
+
+          <div class="bg-steph-white border border-steph-black p-6 relative group hover:-translate-y-1 transition-transform">
+            <div class="absolute top-0 left-0 w-full h-[4px] bg-steph-accent"></div>
+            <h3 class="font-condensed text-[13px] font-bold tracking-[0.15em] text-steph-gray uppercase mb-3">Valor de Venta</h3>
+            <p id="dash-venta" class="font-condensed text-4xl lg:text-5xl font-bold text-steph-black leading-none mb-3">$0</p>
+            <div class="text-[11px] uppercase tracking-wider font-bold text-steph-accent">
+              <span id="dash-fact"><i class="ti ti-receipt"></i> Facturado: $0</span>
+            </div>
+          </div>
+
+          <div class="bg-steph-white border border-steph-black p-6 relative group hover:-translate-y-1 transition-transform">
+            <div id="dash-margen-color" class="absolute top-0 left-0 w-full h-[4px] bg-steph-black"></div>
+            <h3 class="font-condensed text-[13px] font-bold tracking-[0.15em] text-steph-gray uppercase mb-3">Margen de Rentabilidad</h3>
+            <p id="dash-margen" class="font-condensed text-4xl lg:text-5xl font-bold text-steph-black leading-none mb-3">0%</p>
+            <div class="text-[11px] uppercase tracking-wider font-bold text-steph-dark bg-steph-bg inline-block px-2 py-1 border border-steph-industrial">
+              <span id="dash-ganancia">Bruto: $0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="page-costos" class="tab-content max-w-6xl mx-auto space-y-6">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-1">
+            <div class="bg-steph-white border border-steph-black p-6 shadow-[6px_6px_0px_#C5C7C4]">
+              <h3 class="font-condensed text-lg font-bold tracking-[0.1em] uppercase text-steph-black mb-4 border-b border-steph-industrial pb-2">Registrar Gasto</h3>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-[10px] font-bold uppercase tracking-widest text-steph-dark mb-1">Fecha</label>
+                  <input type="date" id="c-f" class="input-steph">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold uppercase tracking-widest text-steph-dark mb-1">Descripción</label>
+                  <input type="text" id="c-d" class="input-steph" placeholder="Ej: Compra de materiales">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-steph-dark mb-1">Categoría</label>
+                    <select id="c-cat" class="input-steph">
+                      <option value="materiales">Materiales</option>
+                      <option value="mano_obra">Mano de obra</option>
+                      <option value="equipos">Equipos</option>
+                      <option value="subcontratos">Subcontratos</option>
+                      <option value="otros">Otros</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-steph-dark mb-1">Monto ($)</label>
+                    <input type="number" id="c-m" class="input-steph" placeholder="0.00">
+                  </div>
+                </div>
+                <button onclick="addC()" class="w-full bg-steph-black text-steph-white py-3 text-xs font-bold uppercase tracking-widest hover:bg-steph-accent transition-colors flex justify-center items-center gap-2 mt-2">
+                  <i class="ti ti-plus"></i> Añadir Costo
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-2 bg-steph-white border border-steph-black flex flex-col h-[500px]">
+            <div class="p-4 border-b border-steph-black flex justify-between items-center bg-steph-bg">
+              <h3 class="font-condensed text-sm font-bold tracking-[0.15em] uppercase text-steph-black">Historial de Incurridos</h3>
+              <div class="text-sm font-bold text-steph-black bg-steph-white px-3 py-1 border border-steph-black">TOTAL: <span id="c-total">$0</span></div>
+            </div>
+            <div class="flex-1 overflow-auto">
+              <table class="w-full text-left border-collapse">
+                <thead class="bg-steph-white sticky top-0 border-b-2 border-steph-black z-10">
+                  <tr>
+                    <th class="p-3 text-[10px] font-bold uppercase tracking-widest text-steph-gray">Fecha</th>
+                    <th class="p-3 text-[10px] font-bold uppercase tracking-widest text-steph-gray">Descripción</th>
+                    <th class="p-3 text-[10px] font-bold uppercase tracking-widest text-steph-gray">Tipo</th>
+                    <th class="p-3 text-[10px] font-bold uppercase tracking-widest text-steph-gray text-right">Monto</th>
+                    <th class="p-3 w-10"></th>
+                  </tr>
+                </thead>
+                <tbody id="c-body" class="text-sm">
+                  </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // --- LÓGICA CORE (Manejo de Datos LocalStorage) ---
+    let DB = {projects:[]};
+    let CUR = null;
+
+    function ls(){ try{ const d = localStorage.getItem('steph_v5'); if(d) DB = JSON.parse(d); }catch(e){} }
+    function ss(){ try{ localStorage.setItem('steph_v5', JSON.stringify(DB)); }catch(e){} }
+    
+    function fU(n){ return '$' + Number(n).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+    function fPct(n){ return Number(n).toFixed(1) + '%'; }
+    function uid(){ return Date.now() + '_' + Math.random().toString(36).slice(2,6); }
+    
+    function P(){ return DB.projects.find(p => p.id === CUR) || null; }
+    function tC(){ const p=P(); return p ? (p.costos||[]).reduce((s,c)=>s+Number(c.monto),0) : 0; }
+    function tTotal(){ return tC(); /* Aquí sumarías horas y estructura cuando agregues los módulos */ }
+
+    // --- INTERFAZ: SIDEBAR ---
+    function renderSB(){
+      const el = document.getElementById('sb-list');
+      if(!DB.projects.length){
+        el.innerHTML = '<div class="text-[10px] text-steph-gray uppercase tracking-wider px-2 border-l-2 border-steph-industrial">Vacío</div>';
+        return;
+      }
+      el.innerHTML = DB.projects.map(p => {
+        const isAct = p.id === CUR;
+        return `
+          <div onclick="selP('${p.id}')" class="group flex items-center gap-2 p-2 cursor-pointer transition-all border border-transparent ${isAct ? 'bg-steph-black text-steph-white shadow-sm' : 'hover:border-steph-industrial hover:bg-steph-bg'}">
+            <div class="flex flex-col overflow-hidden w-full">
+              <span class="text-xs font-bold uppercase tracking-wider truncate ${isAct ? 'text-steph-white' : 'text-steph-black group-hover:text-steph-accent'}">${p.nombre}</span>
+              <span class="text-[10px] font-condensed tracking-widest ${isAct ? 'text-steph-industrial' : 'text-steph-gray'}">${p.codigo || 'S/C'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- INTERFAZ: SELECCIÓN PROYECTO ---
+    function selP(id){
+      CUR = id; const p = P();
+      document.getElementById('tb-title').textContent = p.nombre;
+      document.getElementById('tb-sub').textContent = p.descripcion || p.codigo || 'STEPH WORKSPACE';
+      document.getElementById('tb-est').innerHTML = `<span class="bg-steph-black text-steph-white px-4 py-1 text-[11px] font-bold tracking-widest uppercase border border-steph-black shadow-[2px_2px_0px_#C5C7C4]">Activo</span>`;
+      
+      cancelNP(); renderSB(); goTab('dashboard');
+    }
+
+    // --- INTERFAZ: FORMULARIOS ---
+    let showNP = false;
+    function toggleNP(){
+      showNP = !showNP;
+      if(showNP) { goTab('new'); } else { cancelNP(); }
+    }
+    
+    function cancelNP(){
+      showNP = false;
+      if(CUR) goTab('dashboard'); else goTab('empty');
+    }
+
+    function createP(){
+      const n = document.getElementById('np-n').value.trim();
+      if(!n){ alert('Requerido: Nombre del Proyecto'); return; }
+      const p = {
+        id: uid(), nombre: n, codigo: document.getElementById('np-c').value.trim(),
+        descripcion: document.getElementById('np-d').value.trim(), estado: 'activo',
+        presup: Number(document.getElementById('np-p').value)||0, precioVenta: Number(document.getElementById('np-v').value)||0,
+        costos: []
+      };
+      DB.projects.push(p); ss();
+      ['np-n','np-c','np-d','np-p','np-v'].forEach(id => document.getElementById(id).value = '');
+      selP(p.id);
+    }
+
+    // --- INTERFAZ: ENRUTAMIENTO Y RENDERIZADO DE VISTAS ---
+    function goTab(tab){
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+
+      if(tab === 'new' || (tab === 'empty' && !CUR)) {
+        document.getElementById('page-' + (tab==='new'?'new':'empty')).classList.add('active');
+        return;
+      }
+      
+      if(!CUR){ document.getElementById('page-empty').classList.add('active'); return; }
+
+      const page = document.getElementById('page-' + tab);
+      const btn = document.getElementById('nav-' + tab);
+      if(page) page.classList.add('active');
+      if(btn) btn.classList.add('active');
+
+      if(tab === 'dashboard') renderDash();
+      if(tab === 'costos') renderC();
+    }
+
+    // --- MÓDULO: DASHBOARD ---
+    function renderDash(){
+      const p = P(); if(!p) return;
+      const presup = Number(p.presup)||0;
+      const pv = Number(p.precioVenta)||0;
+      const totC = tTotal();
+      const margen = pv - totC;
+      const margenPct = pv > 0 ? (margen / pv * 100) : 0;
+      const pctC = presup > 0 ? Math.min((totC / presup) * 100, 100) : 0;
+
+      document.getElementById('dash-costo').textContent = fU(totC);
+      document.getElementById('dash-presup').textContent = `Presup: ${fU(presup)}`;
+      document.getElementById('dash-pct-c').textContent = `${pctC.toFixed(0)}% Consumido`;
+      document.getElementById('dash-bar-c').style.width = `${pctC}%`;
+      if(totC > presup) document.getElementById('dash-bar-c').classList.replace('bg-steph-black', 'bg-steph-danger');
+      else document.getElementById('dash-bar-c').classList.replace('bg-steph-danger', 'bg-steph-black');
+      
+      document.getElementById('dash-venta').textContent = fU(pv);
+      
+      const mText = document.getElementById('dash-margen');
+      mText.textContent = fPct(margenPct);
+      mText.className = `font-condensed text-4xl lg:text-5xl font-bold leading-none mb-3 ${margen < 0 ? 'text-steph-danger' : 'text-steph-black'}`;
+      document.getElementById('dash-ganancia').textContent = `${margen >= 0 ? 'Ganancia' : 'Pérdida'}: ${fU(margen)}`;
+      
+      const mCol = document.getElementById('dash-margen-color');
+      mCol.className = `absolute top-0 left-0 w-full h-[4px] ${margen < 0 ? 'bg-steph-danger' : 'bg-steph-black'}`;
+    }
+
+    // --- MÓDULO: COSTOS (Lógica de la Tabla Brutalista) ---
+    const CAT_LABELS = { materiales:'Materiales', mano_obra:'Mano de obra', equipos:'Equipos', subcontratos:'Subcontrato', otros:'Otros' };
+    const CAT_COLORS = { materiales:'bg-steph-black text-steph-white', mano_obra:'bg-steph-accent text-steph-white', equipos:'bg-steph-gray text-steph-white', subcontratos:'bg-steph-industrial text-steph-black', otros:'border border-steph-black text-steph-black' };
+
+    function addC(){
+      const p = P(); if(!p) return;
+      const f = document.getElementById('c-f').value;
+      const d = document.getElementById('c-d').value;
+      const m = document.getElementById('c-m').value;
+      if(!f || !d || !m){ alert('Completá fecha, descripción y monto.'); return; }
+      
+      p.costos.push({ id: uid(), fecha: f, desc: d, cat: document.getElementById('c-cat').value, monto: Number(m) });
+      ss(); renderC();
+      document.getElementById('c-d').value = ''; document.getElementById('c-m').value = '';
+    }
+
+    function renderC(){
+      const p = P(); if(!p) return;
+      const b = document.getElementById('c-body');
+      
+      if(!p.costos.length){
+        b.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-steph-gray text-xs uppercase tracking-widest font-bold bg-steph-bg border-b border-steph-industrial">Sin gastos registrados</td></tr>`;
+        document.getElementById('c-total').textContent = '$0.00';
+        return;
+      }
+      
+      b.innerHTML = p.costos.sort((a,b)=>b.fecha>a.fecha?1:-1).map(c => `
+        <tr class="border-b border-steph-industrial hover:bg-steph-bg transition-colors group">
+          <td class="p-3 text-[11px] font-medium text-steph-dark">${c.fecha}</td>
+          <td class="p-3 text-[13px] font-bold text-steph-black whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">${c.desc}</td>
+          <td class="p-3">
+            <span class="px-2 py-1 text-[9px] uppercase font-bold tracking-widest ${CAT_COLORS[c.cat] || CAT_COLORS.otros}">${CAT_LABELS[c.cat] || c.cat}</span>
+          </td>
+          <td class="p-3 text-[14px] font-bold font-condensed text-steph-black text-right">${fU(c.monto)}</td>
+          <td class="p-3 text-right">
+            <button onclick="delC('${c.id}')" class="text-steph-gray hover:text-steph-danger opacity-0 group-hover:opacity-100 transition-all"><i class="ti ti-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+      
+      document.getElementById('c-total').textContent = fU(tC());
+    }
+
+    function delC(id){
+      const p = P(); if(!p) return;
+      p.costos = p.costos.filter(c => c.id !== id);
+      ss(); renderC();
+    }
+
+    // --- INICIALIZACIÓN ---
+    document.getElementById('c-f').valueAsDate = new Date(); // Setea fecha hoy en form costos
+    ls(); renderSB();
+    if(DB.projects.length){ selP(DB.projects[0].id); } 
+    else { goTab('empty'); }
+
+  </script>
+</body>
+</html>
