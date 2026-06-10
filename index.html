@@ -466,31 +466,7 @@ tr:hover td{background:var(--bg2)}
     </div>
 
     <div id="page-tiempos" class="page">
-      <div class="view-toggle"><button class="vt-btn active" id="tt-man" onclick="setTV('manual')"><i class="ti ti-keyboard" style="font-size:12px;margin-right:4px" aria-hidden="true"></i>Manual</button><button class="vt-btn" id="tt-fab" onclick="setTV('fabrica')"><i class="ti ti-building-factory-2" style="font-size:12px;margin-right:4px" aria-hidden="true"></i>Fábrica</button></div>
-      <div id="tv-manual">
-      <div class="fs">
-        <div class="fst">Cronómetro</div>
-        <div class="tdsp" id="tdsp">00:00:00</div>
-        <div class="tdlbl" id="tdlbl">Listo para iniciar</div>
-        <div class="fg fg2" style="margin-bottom:10px"><div><label>Persona</label><input id="t-pe" placeholder="Nombre"></div><div><label>Tarea</label><input id="t-tk" placeholder="Descripción"></div></div>
-        <div style="display:flex;gap:8px;justify-content:center">
-          <button class="btn btn-g" id="btn-ts" onclick="startT()"><i class="ti ti-player-play" aria-hidden="true"></i>Iniciar</button>
-          <button class="btn" id="btn-tp" onclick="pauseT()" style="display:none"><i class="ti ti-player-pause" aria-hidden="true"></i>Pausar</button>
-          <button class="btn" id="btn-tt" onclick="stopT()" style="display:none"><i class="ti ti-player-stop" aria-hidden="true"></i>Guardar</button>
-        </div>
-      </div>
-      <div class="fs">
-        <div class="fst">Registro manual</div>
-        <div class="fg fg3" style="margin-bottom:8px"><div><label>Fecha</label><input type="date" id="tm-f"></div><div><label>Persona</label><input id="tm-p" placeholder="Nombre"></div><div><label>Tarea</label><input id="tm-t" placeholder="Descripción"></div></div>
-        <div class="fg fg2" style="margin-bottom:10px"><div><label>Hora inicio</label><input type="time" id="tm-i"></div><div><label>Hora fin</label><input type="time" id="tm-fi"></div></div>
-        <button class="btn btn-sm" onclick="addTm()"><i class="ti ti-plus" aria-hidden="true"></i>Registrar</button>
-      </div>
-      <div class="card">
-        <div class="ch"><div class="ct-lbl"><div class="cl" style="background:#8878cc"></div>Registro de tiempos</div><span id="tm-tot" style="font-size:11px;color:var(--t2)">Total: 0 h</span></div>
-        <div style="overflow-x:auto"><table><colgroup><col style="width:78px"><col style="width:88px"><col><col style="width:48px"><col style="width:48px"><col style="width:58px"><col style="width:78px"><col style="width:34px"></colgroup><thead><tr><th>Fecha</th><th>Persona</th><th>Tarea</th><th>Inicio</th><th>Fin</th><th>Dur.</th><th>Origen</th><th></th></tr></thead><tbody id="tm-body"></tbody></table></div>
-      </div>
-      </div>
-      <div id="tv-fabrica" style="display:none"><div id="fab-wrap"></div></div>
+      <div id="fab-wrap"></div>
     </div>
 
     <div id="page-produccion" class="page">
@@ -537,7 +513,7 @@ const tFc=p=>(p?.facturas||[]).reduce((s,f)=>s+fARS(f),0);
 const fcCob=p=>(p?.facturas||[]).filter(f=>f.estado==='cobrada').reduce((s,f)=>s+fARS(f),0);
 const tFact=()=>fcCob(P());
 const tHit=()=>tFc(P());
-const tTm=()=>(P()?.tiempos||[]).reduce((s,t)=>s+Number(t.dur),0);
+const tTm=()=>fabHoras(P());
 const venC=p=>{const u=(Number(p?.precioUSD)||0)*(Number(p?.cotizUSD)||0);return u>0?u:(Number(p?.precioVenta)||0);};
 const legV=p=>venC(p)+((p?.items||[]).reduce((s,i)=>s+Number(i.qty)*Number(i.precio),0));
 const pVenta=p=>(p&&p.facturas&&p.facturas.length)?tFc(p):legV(p);
@@ -577,8 +553,7 @@ function fabLoad(force){
 }
 const fabHoras=p=>(p&&p.fabProyectoId)?FAB.registros.filter(r=>String(r.proyecto_id)===String(p.fabProyectoId)).reduce((s,r)=>s+(Number(r.horas)||0),0):0;
 const fabCost=p=>fabHoras(p)*(Number(DB.fabTarifa)||0);
-let TV='manual',FCH={};
-function setTV(v){TV=v;document.getElementById('tt-man').classList.toggle('active',v==='manual');document.getElementById('tt-fab').classList.toggle('active',v==='fabrica');document.getElementById('tv-manual').style.display=v==='manual'?'':'none';document.getElementById('tv-fabrica').style.display=v==='fabrica'?'':'none';if(v==='fabrica')rFab();}
+let FCH={};
 function setTarifa(v){DB.fabTarifa=Number(v)||0;ss();rFab();rSB();}
 function fabRefresh(){fabLoad(true).then(()=>rFab());}
 function fillFabSel(){const sel=document.getElementById('cfg-fab');if(!sel)return;const p=P();const pys=(FAB.estado&&FAB.estado.proyectos)||[];sel.innerHTML='<option value="">— Sin vincular —</option>'+pys.map(x=>`<option value="${x.id}">${x.nombre}</option>`).join('');sel.value=(p&&p.fabProyectoId)||'';}
@@ -752,7 +727,7 @@ function rSB(){const el=document.getElementById('sb-list');if(!DB.projects.lengt
 function selP(id){CUR=id;const p=P();document.getElementById('tb-title').textContent=p.cliente||'Sin cliente';document.getElementById('tb-sub').textContent=p.codigo?'Cód: '+p.codigo:'Steph Innovations S.A.';const em={activo:'stag-a',pausado:'stag-p',planificado:'stag-pl',finalizado:'stag-f'};document.getElementById('tb-est').innerHTML=`<span class="stag ${em[p.estado]||'stag-f'}">${p.estado||'activo'}</span>`;document.getElementById('btn-exp').style.display='';hideNP();rSB();go('dashboard');}
 
 function allHide(){['dashboard','costos','estructura','tiempos','produccion','config','empty','new','ventas'].forEach(t=>{const el=document.getElementById('page-'+t);if(el){el.classList.remove('on');el.style.display='none';}});}
-function go(tab){allHide();document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));const nav=document.getElementById('nav-'+tab);if(nav)nav.classList.add('active');if(!CUR){const el=document.getElementById('page-empty');el.style.display='';el.classList.add('on');return;}const el=document.getElementById('page-'+tab);el.style.display='';el.classList.add('on');if(tab==='dashboard'){if(CURVIEW==='anual')rAnual();else rDash();}if(tab==='ventas')rV();if(tab==='costos')rC();if(tab==='estructura')rE();if(tab==='tiempos'){rTm();if(TV==='fabrica')rFab();}if(tab==='produccion')rProd();if(tab==='config')lCfg();}
+function go(tab){allHide();document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));const nav=document.getElementById('nav-'+tab);if(nav)nav.classList.add('active');if(!CUR){const el=document.getElementById('page-empty');el.style.display='';el.classList.add('on');return;}const el=document.getElementById('page-'+tab);el.style.display='';el.classList.add('on');if(tab==='dashboard'){if(CURVIEW==='anual')rAnual();else rDash();}if(tab==='ventas')rV();if(tab==='costos')rC();if(tab==='estructura')rE();if(tab==='tiempos')rFab();if(tab==='produccion')rProd();if(tab==='config')lCfg();}
 
 let showNP=false;
 function toggleNP(){showNP=!showNP;allHide();if(showNP){document.getElementById('page-new').style.display='';document.getElementById('page-new').classList.add('on');}else if(!CUR){document.getElementById('page-empty').style.display='';document.getElementById('page-empty').classList.add('on');}else go('dashboard');document.getElementById('btn-np').innerHTML=showNP?'<i class="ti ti-x" style="font-size:12px" aria-hidden="true"></i><span>Cancelar</span>':'<i class="ti ti-plus" style="font-size:12px" aria-hidden="true"></i><span>Nuevo proyecto</span>';}
@@ -789,14 +764,6 @@ function delC(id){const p=P();if(!p)return;p.costos=(p.costos||[]).filter(c=>c.i
 function addE(){const p=P();if(!p)return;const c=document.getElementById('e-c').value,m=document.getElementById('e-m').value;if(!c||!m){alert('Completá concepto y monto.');return;}p.estructura=p.estructura||[];p.estructura.push({id:uid(),concepto:c,cat:document.getElementById('e-cat').value,freq:document.getElementById('e-fr').value,monto:Number(m),fecha:document.getElementById('e-f').value,notas:document.getElementById('e-n').value});ss();rE();['e-c','e-m','e-n'].forEach(id=>document.getElementById(id).value='');}
 function rE(){const p=P();if(!p)return;const b=document.getElementById('e-body');if(!(p.estructura||[]).length){b.innerHTML=empty();document.getElementById('e-tot').textContent='$0';return;}b.innerHTML=(p.estructura||[]).map(e=>`<tr><td style="white-space:normal">${e.concepto}</td><td><span class="tg tg-b">${EL[e.cat]||e.cat}</span></td><td><span class="tg tg-a">${FL[e.freq]||e.freq}</span></td><td style="font-weight:500">${f$(e.monto)}</td><td style="color:var(--t2)">${e.fecha||'—'}</td><td>${db(`delE('${e.id}')`)}</td></tr>`).join('');document.getElementById('e-tot').textContent=f$(tE());}
 function delE(id){const p=P();if(!p)return;p.estructura=(p.estructura||[]).filter(e=>e.id!==id);ss();rE();}
-
-function startT(){if(tPause){tPause=false;tInt=setInterval(tick,1000);document.getElementById('btn-ts').style.display='none';document.getElementById('btn-tp').style.display='';document.getElementById('btn-tt').style.display='';document.getElementById('tdlbl').textContent='Corriendo...';document.getElementById('tdsp').style.color='var(--gold)';return;}tS=0;tStart=new Date();tPause=false;tInt=setInterval(tick,1000);document.getElementById('btn-ts').style.display='none';document.getElementById('btn-tp').style.display='';document.getElementById('btn-tt').style.display='';document.getElementById('tdlbl').textContent='Corriendo...';document.getElementById('tdsp').style.color='var(--gold)';}
-function pauseT(){clearInterval(tInt);tPause=true;document.getElementById('btn-ts').innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i>Reanudar';document.getElementById('btn-ts').style.display='';document.getElementById('btn-tp').style.display='none';document.getElementById('tdlbl').textContent='Pausado';document.getElementById('tdsp').style.color='var(--warn2)';}
-function stopT(){clearInterval(tInt);tPause=false;const p=P();if(p&&tS>0){p.tiempos=p.tiempos||[];const now=new Date();p.tiempos.push({id:uid(),fecha:now.toISOString().split('T')[0],persona:document.getElementById('t-pe').value||'—',tarea:document.getElementById('t-tk').value||'—',ini:tStart?tStart.toTimeString().slice(0,5):'',fin:now.toTimeString().slice(0,5),dur:(tS/3600).toFixed(2),origen:'cronometro'});ss();rTm();}tS=0;document.getElementById('tdsp').textContent='00:00:00';document.getElementById('tdsp').style.color='var(--t1)';document.getElementById('btn-ts').innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i>Iniciar';document.getElementById('btn-ts').style.display='';document.getElementById('btn-tp').style.display='none';document.getElementById('btn-tt').style.display='none';document.getElementById('tdlbl').textContent='Listo para iniciar';document.getElementById('t-tk').value='';document.getElementById('t-pe').value='';}
-function tick(){tS++;const h=String(Math.floor(tS/3600)).padStart(2,'0'),m=String(Math.floor((tS%3600)/60)).padStart(2,'0'),s=String(tS%60).padStart(2,'0');document.getElementById('tdsp').textContent=h+':'+m+':'+s;}
-function addTm(){const p=P();if(!p)return;const f=document.getElementById('tm-f').value,pe=document.getElementById('tm-p').value,t=document.getElementById('tm-t').value;if(!f||!pe||!t){alert('Completá fecha, persona y tarea.');return;}const ini=document.getElementById('tm-i').value,fin=document.getElementById('tm-fi').value;let dur=0;if(ini&&fin){const[ih,im]=ini.split(':').map(Number);const[fh,fm]=fin.split(':').map(Number);dur=((fh*60+fm)-(ih*60+im))/60;}p.tiempos=p.tiempos||[];p.tiempos.push({id:uid(),fecha:f,persona:pe,tarea:t,ini,fin,dur:dur.toFixed(2),origen:'manual'});ss();rTm();['tm-p','tm-t','tm-i','tm-fi'].forEach(id=>document.getElementById(id).value='');}
-function rTm(){const p=P();if(!p)return;const b=document.getElementById('tm-body');document.getElementById('tm-tot').textContent='Total: '+fH(tTm());if(!(p.tiempos||[]).length){b.innerHTML=empty();return;}b.innerHTML=(p.tiempos||[]).sort((a,b)=>b.fecha>a.fecha?1:-1).map(t=>`<tr><td style="color:var(--t2)">${t.fecha}</td><td>${t.persona}</td><td style="white-space:normal">${t.tarea}</td><td>${t.ini||'—'}</td><td>${t.fin||'—'}</td><td style="font-weight:500">${fH(t.dur)}</td><td><span class="tg ${t.origen==='cronometro'?'tg-v':'tg-g'}">${t.origen==='cronometro'?'Cronóm.':'Manual'}</span></td><td>${db(`delTm('${t.id}')`)}</td></tr>`).join('');}
-function delTm(id){const p=P();if(!p)return;p.tiempos=(p.tiempos||[]).filter(t=>t.id!==id);ss();rTm();}
 
 function lCfg(){const p=P();if(!p)return;const map={'cfg-cli':'cliente','cfg-c':'codigo','cfg-d':'descripcion','cfg-fi':'inicio','cfg-ff':'fin','cfg-e':'estado','cfg-p':'presup','cfg-ap':'avplan','cfg-ar':'avreal'};Object.entries(map).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.value=p[k]||'';});fillFabSel();fabLoad().then(fillFabSel);}
 function saveCfg(){const p=P();if(!p)return;const map={'cfg-cli':'cliente','cfg-c':'codigo','cfg-d':'descripcion','cfg-fi':'inicio','cfg-ff':'fin','cfg-e':'estado'};Object.entries(map).forEach(([id,k])=>{p[k]=document.getElementById(id).value;});p.fabProyectoId=document.getElementById('cfg-fab').value||'';p.presup=Number(document.getElementById('cfg-p').value)||0;p.avplan=Number(document.getElementById('cfg-ap').value)||0;p.avreal=Number(document.getElementById('cfg-ar').value)||0;ss();rSB();document.getElementById('tb-title').textContent=p.cliente||'Sin cliente';document.getElementById('tb-sub').textContent=p.codigo?'Cód: '+p.codigo:'';const em={activo:'stag-a',pausado:'stag-p',planificado:'stag-pl',finalizado:'stag-f'};document.getElementById('tb-est').innerHTML=`<span class="stag ${em[p.estado]||'stag-f'}">${p.estado}</span>`;go('dashboard');}
@@ -890,7 +857,7 @@ function prodParse(XLSX,wb){
 function prodExport(){const pr=prodInit();loadXLSX().then(XLSX=>{const wb=XLSX.utils.book_new();const h1=[['STEPH – COVER ENGINE | CONTROL DE FABRICACIÓN | '+PTOTAL+' UNIDADES'],[],[],[],['N° Lote','Fecha','Racks','CM Ini','CM Fin','Láser Ini','Láser Fin','Router Ini','Router Fin','Sold Ini','Sold Fin','Unión Ini','Unión Fin','T.CM','T.Láser','T.Router','T.Sold','T.Unión','Total min','Total hs','Racks/h','Obs.']];pr.lotes.forEach((l,idx)=>{const Rr=6+idx;const proc=[];PROCS.forEach(x=>proc.push(l[x.k].ini,l[x.k].fin));h1.push([l.nLote,l.fecha,pnum(l.cant)].concat(proc).concat([{f:`IF(OR(E${Rr}="",D${Rr}=""),"",ROUND((E${Rr}-D${Rr})*1440,0))`},{f:`IF(OR(G${Rr}="",F${Rr}=""),"",ROUND((G${Rr}-F${Rr})*1440,0))`},{f:`IF(OR(I${Rr}="",H${Rr}=""),"",ROUND((I${Rr}-H${Rr})*1440,0))`},{f:`IF(OR(K${Rr}="",J${Rr}=""),"",ROUND((K${Rr}-J${Rr})*1440,0))`},{f:`IF(OR(M${Rr}="",L${Rr}=""),"",ROUND((M${Rr}-L${Rr})*1440,0))`},{f:`SUM(N${Rr}:R${Rr})`},{f:`IF(S${Rr}="","",ROUND(S${Rr}/60,2))`},{f:`IF(OR(C${Rr}="",T${Rr}="",T${Rr}=0),"",ROUND(C${Rr}/T${Rr},1))`},l.obs]));});XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(h1),'Registro por Lote');const h2=[['SEGUIMIENTO INDIVIDUAL – '+PTOTAL+' COVER ENGINE'],[],[],[],['N° Rack','Lote','CM ✓','Láser ✓','Router ✓','Sold ✓','Unión ✓','Etapas','Estado']];pr.racks.forEach(r=>{const ok=r.e.filter(Boolean).length;h2.push([r.n,r.lote].concat(r.e.map(x=>x?'✓':'')).concat([ok,ok===5?'✅ LISTO':ok===0?'⏳ PENDIENTE':'🔧 EN PROCESO '+ok+'/5']));});XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(h2),'Seguimiento '+PTOTAL+' Racks');const R=prodResumen();const h3=[['RESUMEN EJECUTIVO – COVER ENGINE x'+PTOTAL],[],['Proceso','Prom. (min)','Mín.','Máx.','% del Total','Etapa crítica']];R.rows.forEach(r=>h3.push([r.n,pround(r.avg),r.min,r.max,r.pct!=null?pround(r.pct,1)+'%':'',r.bott?'⚠️ CUELLO DE BOTELLA':'']));h3.push(['TOTAL PROMEDIO POR RACK',pround(R.total),(R.total!=null?pround(R.total/60,2):'')+' hs']);h3.push([]);h3.push(['PROYECCIÓN PARA '+PTOTAL+' RACKS']);h3.push(['Tiempo total (serie, min)','','','',pround(R.serieMin)]);h3.push(['Tiempo total (serie, hs)','','','',pround(R.serieHs,1)]);h3.push(['Con paralelo (−40%, hs)','','','',pround(R.parHs,1)]);h3.push(['Racks completados','','','',R.done]);h3.push(['% Avance pedido','','','',pround(R.avance,1)+'%']);XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(h3),'Resumen Ejecutivo');XLSX.writeFile(wb,'CoverEngine_'+PTOTAL+'Racks.xlsx');}).catch(err=>alert(err.message));}
 /* =================== FIN PRODUCCIÓN · COVER ENGINE =================== */
 
-['c-f','tm-f','e-f','f-f'].forEach(id=>{try{document.getElementById(id).valueAsDate=new Date();}catch(e){}});
+['c-f','e-f','f-f'].forEach(id=>{try{document.getElementById(id).valueAsDate=new Date();}catch(e){}});
 // El login de Firebase llama a ls() automáticamente al detectar la sesión
 </script>
 </body>
