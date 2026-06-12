@@ -318,7 +318,6 @@ tr:hover td{background:var(--bg2)}
     <div class="ni" id="nav-costos" onclick="go('costos')"><i class="ti ti-receipt-2" aria-hidden="true"></i>Costos</div>
     <div class="ni" id="nav-estructura" onclick="go('estructura')"><i class="ti ti-building-skyscraper" aria-hidden="true"></i>Estructura</div>
     <div class="ni" id="nav-tiempos" onclick="go('tiempos')"><i class="ti ti-timer" aria-hidden="true"></i>Tiempos</div>
-    <div class="ni" id="nav-produccion" onclick="go('produccion')"><i class="ti ti-cube" aria-hidden="true"></i>Producción</div>
     <div class="ni" id="nav-config" onclick="go('config')"><i class="ti ti-settings" aria-hidden="true"></i>Configuración</div>
   </div>
 </div>
@@ -467,10 +466,6 @@ tr:hover td{background:var(--bg2)}
 
     <div id="page-tiempos" class="page">
       <div id="fab-wrap"></div>
-    </div>
-
-    <div id="page-produccion" class="page">
-      <div class="prod" id="prod-wrap"></div>
     </div>
 
     <div id="page-config" class="page">
@@ -729,8 +724,8 @@ function rSB(){const el=document.getElementById('sb-list');if(!DB.projects.lengt
 
 function selP(id){CUR=id;const p=P();document.getElementById('tb-title').textContent=p.cliente||'Sin cliente';document.getElementById('tb-sub').textContent=p.codigo?'Cód: '+p.codigo:'Steph Innovations S.A.';const em={activo:'stag-a',pausado:'stag-p',planificado:'stag-pl',finalizado:'stag-f'};document.getElementById('tb-est').innerHTML=`<span class="stag ${em[p.estado]||'stag-f'}">${p.estado||'activo'}</span>`;document.getElementById('btn-exp').style.display='';hideNP();rSB();go('dashboard');}
 
-function allHide(){['dashboard','costos','estructura','tiempos','produccion','config','empty','new','ventas'].forEach(t=>{const el=document.getElementById('page-'+t);if(el){el.classList.remove('on');el.style.display='none';}});}
-function go(tab){allHide();document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));const nav=document.getElementById('nav-'+tab);if(nav)nav.classList.add('active');if(!CUR){const el=document.getElementById('page-empty');el.style.display='';el.classList.add('on');return;}const el=document.getElementById('page-'+tab);el.style.display='';el.classList.add('on');if(tab==='dashboard'){if(CURVIEW==='anual')rAnual();else rDash();}if(tab==='ventas')rV();if(tab==='costos')rC();if(tab==='estructura')rE();if(tab==='tiempos')rFab();if(tab==='produccion')rProd();if(tab==='config')lCfg();}
+function allHide(){['dashboard','costos','estructura','tiempos','config','empty','new','ventas'].forEach(t=>{const el=document.getElementById('page-'+t);if(el){el.classList.remove('on');el.style.display='none';}});}
+function go(tab){allHide();document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));const nav=document.getElementById('nav-'+tab);if(nav)nav.classList.add('active');if(!CUR){const el=document.getElementById('page-empty');el.style.display='';el.classList.add('on');return;}const el=document.getElementById('page-'+tab);el.style.display='';el.classList.add('on');if(tab==='dashboard'){if(CURVIEW==='anual')rAnual();else rDash();}if(tab==='ventas')rV();if(tab==='costos')rC();if(tab==='estructura')rE();if(tab==='tiempos')rFab();if(tab==='config')lCfg();}
 
 let showNP=false;
 function toggleNP(){showNP=!showNP;allHide();if(showNP){document.getElementById('page-new').style.display='';document.getElementById('page-new').classList.add('on');}else if(!CUR){document.getElementById('page-empty').style.display='';document.getElementById('page-empty').classList.add('on');}else go('dashboard');document.getElementById('btn-np').innerHTML=showNP?'<i class="ti ti-x" style="font-size:12px" aria-hidden="true"></i><span>Cancelar</span>':'<i class="ti ti-plus" style="font-size:12px" aria-hidden="true"></i><span>Nuevo proyecto</span>';}
@@ -773,91 +768,6 @@ function saveCfg(){const p=P();if(!p)return;const map={'cfg-cli':'cliente','cfg-
 function delP(){if(!CUR)return;if(!confirm('¿Eliminar este proyecto?'))return;DB.projects=DB.projects.filter(p=>p.id!==CUR);CUR=null;ss();rSB();document.getElementById('tb-title').textContent='Seleccioná un proyecto';document.getElementById('tb-sub').textContent='Steph Innovations S.A.';document.getElementById('tb-est').innerHTML='';document.getElementById('btn-exp').style.display='none';allHide();document.getElementById('page-empty').style.display='';document.getElementById('page-empty').classList.add('on');}
 function exportP(){const p=P();if(!p)return;const b=new Blob([JSON.stringify(p,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=((p.cliente||'proyecto')+'-'+(p.codigo||p.id)).replace(/\s+/g,'_')+'.json';a.click();}
 
-/* ===================== PRODUCCIÓN · COVER ENGINE ===================== */
-const PTOTAL=60;
-const PROCS=[{k:'cm',n:'Cort. Manual',c:'#5a8ab8'},{k:'laser',n:'Corte Láser',c:'#cc5555'},{k:'router',n:'Corte Router',c:'#5aad7a'},{k:'sold',n:'Sold. Comp.',c:'#c8883a'},{k:'union',n:'Unión Comp.',c:'#8878cc'}];
-const PSHEET='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-let PVIEW='lotes';
-const pesc=s=>String(s==null?'':s).replace(/"/g,'&quot;');
-
-function prodBlankLote(){const o={id:uid(),nLote:'',fecha:'',cant:'',obs:''};PROCS.forEach(x=>o[x.k]={ini:'',fin:''});return o;}
-function prodInit(){const p=P();if(!p)return null;if(!p.prod){const racks=[];for(let i=1;i<=PTOTAL;i++)racks.push({n:i,lote:'',e:[false,false,false,false,false]});p.prod={lotes:[prodBlankLote()],racks};ss();}else{while(p.prod.racks.length<PTOTAL)p.prod.racks.push({n:p.prod.racks.length+1,lote:'',e:[false,false,false,false,false]});}return p.prod;}
-function pdiff(a,b){if(!a||!b)return null;const[ah,am]=a.split(':').map(Number),[bh,bm]=b.split(':').map(Number);if(isNaN(ah)||isNaN(bh))return null;let d=(bh*60+bm)-(ah*60+am);if(d<0)d+=1440;return Math.round(d);}
-function prodCalc(l){const per={};let tot=0,any=false;PROCS.forEach(x=>{const m=pdiff(l[x.k].ini,l[x.k].fin);per[x.k]=m;if(m!=null){tot+=m;any=true;}});const tm=any?tot:null,th=tm==null?null:Math.round(tm/60*100)/100;const c=parseFloat(l.cant),rh=(!c||!th)?null:Math.round(c/th*10)/10;return{per,tm,th,rh};}
-function prodDone(){const pr=P()?.prod;if(!pr)return 0;return pr.racks.filter(r=>r.e.every(Boolean)).length;}
-function prodResumen(){const pr=prodInit();const by={};PROCS.forEach(x=>by[x.k]=[]);pr.lotes.forEach(l=>{const c=prodCalc(l);PROCS.forEach(x=>{if(c.per[x.k]!=null)by[x.k].push(c.per[x.k]);});});const rows=PROCS.map(x=>{const a=by[x.k];const avg=a.length?a.reduce((s,v)=>s+v,0)/a.length:null;return{k:x.k,n:x.n,c:x.c,avg,min:a.length?Math.min(...a):null,max:a.length?Math.max(...a):null};});const sum=rows.reduce((s,r)=>s+(r.avg||0),0);const mx=Math.max(...rows.map(r=>r.avg||0));rows.forEach(r=>{r.pct=sum?(r.avg||0)/sum*100:null;r.bott=r.avg!=null&&sum>0&&r.avg===mx;});const done=prodDone();const rhs=pr.lotes.map(l=>prodCalc(l).rh).filter(v=>v!=null);const rhAvg=rhs.length?rhs.reduce((s,v)=>s+v,0)/rhs.length:null;return{rows,total:sum||null,serieMin:sum?sum*PTOTAL:null,serieHs:sum?sum*PTOTAL/60:null,parHs:sum?sum*PTOTAL*0.6/60:null,done,avance:done/PTOTAL*100,rhAvg};}
-
-function pmc(color,label,val,sub,fill){return `<div class="mc"><div class="mc-top" style="background:var(--${color})"></div><div class="mc-lbl">${label}</div><div class="mc-val">${val}</div><div class="mc-sub">${sub||' '}</div>${fill!=null?`<div class="mc-trk"><div class="mc-fill" style="width:${Math.min(fill,100).toFixed(0)}%;background:var(--${color})"></div></div>`:''}</div>`;}
-function ptabb(v,label,icon){return `<button class="vt-btn${PVIEW===v?' active':''}" onclick="prodView('${v}')"><i class="ti ${icon}" style="font-size:12px;margin-right:4px" aria-hidden="true"></i>${label}</button>`;}
-function prodView(v){PVIEW=v;rProd();}
-
-function rProd(){const wrap=document.getElementById('prod-wrap');const pr=prodInit();if(!pr){wrap.innerHTML='<div style="padding:20px;color:var(--t3);font-size:11px">Seleccioná un proyecto.</div>';return;}const R=prodResumen();const bott=R.rows.find(r=>r.bott&&r.avg!=null);let mg='';mg+=pmc('gold','Racks completos',R.done+' / '+PTOTAL,R.avance.toFixed(0)+'% del pedido',R.avance);mg+=pmc('ok2','Avance pedido',fP(R.avance),'unidades terminadas');mg+=pmc('blue2','Racks/hora prom',R.rhAvg!=null?R.rhAvg.toFixed(1):'—','según lotes');mg+=pmc('warn2','Tiempo prom/rack',R.total!=null?Math.round(R.total)+' min':'—',R.total!=null?(R.total/60).toFixed(2)+' hs':' ');mg+=pmc('err2','Cuello de botella',bott?bott.n:'—',bott?Math.round(bott.avg)+' min':' ');mg+=pmc('gold2','Est. '+PTOTAL+'u (paralelo)',R.parHs!=null?R.parHs.toFixed(1)+' hs':'—','−40% vs serie');
-  const tools='<div class="prod-tools"><button class="btn btn-sm" onclick="prodImport()"><i class="ti ti-upload" aria-hidden="true"></i>Importar Excel</button><button class="btn btn-sm" onclick="prodExport()"><i class="ti ti-download" aria-hidden="true"></i>Exportar Excel</button></div>';
-  const bar='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap"><div class="view-toggle" style="margin-bottom:0">'+ptabb('lotes','Registro por lote','ti-clipboard-list')+ptabb('racks','Seguimiento '+PTOTAL,'ti-list-check')+ptabb('resumen','Resumen ejecutivo','ti-chart-pie')+'</div>'+tools+'</div>';
-  wrap.innerHTML='<div class="mg">'+mg+'</div>'+bar+(PVIEW==='lotes'?prodLotesHTML(pr):PVIEW==='racks'?prodRacksHTML(pr):prodResumenHTML(R));}
-
-function prodLotesHTML(pr){const h1=`<tr><th rowspan="2">N° Lote</th><th rowspan="2">Fecha</th><th rowspan="2">Racks</th>`+PROCS.map(x=>`<th colspan="2" class="proch" style="color:${x.c}">${x.n}</th>`).join('')+`<th rowspan="2">Total min</th><th rowspan="2">Total hs</th><th rowspan="2">Racks/h</th><th rowspan="2">Obs.</th><th rowspan="2"></th></tr>`;const h2=`<tr>`+PROCS.map(()=>`<th>Ini</th><th>Fin</th>`).join('')+`</tr>`;const rows=pr.lotes.map((l,i)=>{const c=prodCalc(l);const cells=PROCS.map(x=>`<td><input type="time" class="tinp" value="${l[x.k].ini}" onchange="prodSetProc(${i},'${x.k}','ini',this.value)"></td><td><input type="time" class="tinp" value="${l[x.k].fin}" onchange="prodSetProc(${i},'${x.k}','fin',this.value)"></td>`).join('');return `<tr><td><input class="ninp" value="${pesc(l.nLote)}" placeholder="01" onchange="prodSetLote(${i},'nLote',this.value)"></td><td><input type="date" class="dinp" value="${l.fecha||''}" onchange="prodSetLote(${i},'fecha',this.value)"></td><td><input type="number" class="cinp" value="${l.cant||''}" onchange="prodSetLote(${i},'cant',this.value)"></td>${cells}<td class="pcalc">${c.tm!=null?c.tm:'—'}</td><td class="pcalc">${c.th!=null?c.th.toFixed(2):'—'}</td><td class="pcalc">${c.rh!=null?c.rh.toFixed(1):'—'}</td><td><input class="oinp" value="${pesc(l.obs)}" placeholder="—" onchange="prodSetLote(${i},'obs',this.value)"></td><td>${db(`prodDelLote(${i})`)}</td></tr>`;}).join('');let tm=0,nm=0,tr=0;pr.lotes.forEach(l=>{const c=prodCalc(l);if(c.tm!=null){tm+=c.tm;nm++;}const cc=parseFloat(l.cant);if(!isNaN(cc))tr+=cc;});const foot=`<tr class="pfoot"><td colspan="3">Promedios / totales</td><td colspan="${PROCS.length*2}"></td><td class="pcalc">${nm?Math.round(tm/nm):'—'}</td><td colspan="2">Racks: ${tr}</td><td></td><td></td></tr>`;return `<div class="card"><div class="ch"><div class="ct-lbl"><div class="cl" style="background:var(--blue2)"></div>Registro de tiempos por lote <span style="color:var(--t3);text-transform:none;letter-spacing:0;font-weight:400">· procesos en paralelo</span></div><button class="btn btn-sm" onclick="prodAddLote()"><i class="ti ti-plus" aria-hidden="true"></i>Agregar lote</button></div><div class="pscroll"><table class="ptbl"><thead>${h1}${h2}</thead><tbody>${rows}</tbody><tfoot>${foot}</tfoot></table></div></div>`;}
-
-function prodRacksHTML(pr){const head=`<tr><th>N° Rack</th><th>Lote</th>`+PROCS.map(x=>`<th class="proch" style="color:${x.c}">${x.n}</th>`).join('')+`<th>Etapas</th><th>Estado</th></tr>`;const rows=pr.racks.map((r,i)=>{const ok=r.e.filter(Boolean).length;const est=ok===5?'<span class="tg tg-g">Listo</span>':ok===0?'<span style="color:var(--t3);font-size:9px;letter-spacing:0.08em;text-transform:uppercase">Pendiente</span>':`<span class="tg tg-a">En proceso ${ok}/5</span>`;const chk=PROCS.map((x,j)=>`<td><span class="pchk${r.e[j]?' on':''}" onclick="prodTog(${i},${j})">✓</span></td>`).join('');return `<tr class="${ok===5?'prack-done':''}"><td style="font-weight:500;color:var(--t2)">${r.n}</td><td><input class="ninp" value="${pesc(r.lote)}" placeholder="—" onchange="prodSetRackLote(${i},this.value)"></td>${chk}<td class="pcalc">${ok}/5</td><td>${est}</td></tr>`;}).join('');return `<div class="card"><div class="ch"><div class="ct-lbl"><div class="cl" style="background:var(--gold)"></div>Seguimiento individual · ${PTOTAL} Cover Engine</div><span style="font-size:11px;color:var(--t2)">${prodDone()} listos</span></div><div class="pscroll"><table class="ptbl"><thead>${head}</thead><tbody>${rows}</tbody></table></div></div>`;}
-
-function prodResumenHTML(R){const procRows=R.rows.map(r=>`<tr><td><span class="pdot" style="background:${r.c}"></span>${r.n}${r.bott?'<span class="bott">CUELLO DE BOTELLA</span>':''}</td><td class="pcalc">${r.avg!=null?Math.round(r.avg):'—'}</td><td class="pcalc">${r.min!=null?r.min:'—'}</td><td class="pcalc">${r.max!=null?r.max:'—'}</td><td class="pcalc">${r.pct!=null?r.pct.toFixed(1)+'%':'—'}</td></tr>`).join('');const tbl=`<div class="card"><div class="ch"><div class="ct-lbl"><div class="cl" style="background:#8878cc"></div>Tiempo promedio por proceso (min)</div></div><table><colgroup><col><col style="width:64px"><col style="width:56px"><col style="width:56px"><col style="width:64px"></colgroup><thead><tr><th>Proceso</th><th>Prom.</th><th>Mín.</th><th>Máx.</th><th>% total</th></tr></thead><tbody>${procRows}<tr class="pfoot"><td>Total promedio por rack</td><td class="pcalc">${R.total!=null?Math.round(R.total):'—'}</td><td colspan="3" class="pcalc">${R.total!=null?(R.total/60).toFixed(2)+' hs':'—'}</td></tr></tbody></table></div>`;const proj=`<div class="card"><div class="ch"><div class="ct-lbl"><div class="cl" style="background:var(--gold)"></div>Proyección para ${PTOTAL} racks</div></div><div><div class="krow"><span class="klbl">Tiempo total en serie</span><span class="kval">${R.serieHs!=null?R.serieHs.toFixed(1)+' hs':'—'} <span style="color:var(--t3)">(${R.serieMin!=null?Math.round(R.serieMin)+' min':'—'})</span></span></div><div class="krow"><span class="klbl">Con procesos en paralelo (−40%)</span><span class="kval" style="color:var(--ok2)">${R.parHs!=null?R.parHs.toFixed(1)+' hs':'—'}</span></div><div class="krow"><span class="klbl">Racks completados</span><span class="kval">${R.done} / ${PTOTAL}</span></div><div class="krow"><span class="klbl">Avance del pedido</span><span class="kval" style="color:var(--gold)">${fP(R.avance)}</span></div><div class="krow"><span class="klbl">Racks/hora promedio</span><span class="kval">${R.rhAvg!=null?R.rhAvg.toFixed(1):'—'}</span></div></div></div>`;return '<div class="g2">'+tbl+proj+'</div>';}
-
-function prodSetLote(i,k,v){const pr=P()?.prod;if(!pr)return;pr.lotes[i][k]=v;ss();if(k==='cant')rProd();}
-function prodSetProc(i,k,f,v){const pr=P()?.prod;if(!pr)return;pr.lotes[i][k][f]=v;ss();rProd();}
-function prodAddLote(){const pr=P()?.prod;if(!pr)return;pr.lotes.push(prodBlankLote());ss();rProd();}
-function prodDelLote(i){const pr=P()?.prod;if(!pr)return;pr.lotes.splice(i,1);if(!pr.lotes.length)pr.lotes.push(prodBlankLote());ss();rProd();}
-function prodTog(i,j){const pr=P()?.prod;if(!pr)return;pr.racks[i].e[j]=!pr.racks[i].e[j];ss();rProd();}
-function prodSetRackLote(i,v){const pr=P()?.prod;if(!pr)return;pr.racks[i].lote=v;ss();}
-
-function loadXLSX(){return new Promise((res,rej)=>{if(window.XLSX)return res(window.XLSX);const s=document.createElement('script');s.src=PSHEET;s.onload=()=>res(window.XLSX);s.onerror=()=>rej(new Error('No se pudo cargar SheetJS (revisá conexión)'));document.head.appendChild(s);});}
-function ptime(v){if(v==null||v==='')return '';if(typeof v==='string'&&/^\d{1,2}:\d{2}/.test(v))return v.slice(0,5);const n=parseFloat(v);if(!isNaN(n)&&n>=0&&n<1){const m=Math.round(n*1440);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}return '';}
-function pnum(v){const n=parseFloat(v);return isNaN(n)?'':n;}
-function pround(n,d){if(n==null||isNaN(n))return '';const f=Math.pow(10,d||0);return Math.round(n*f)/f;}
-function prodImport(){const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls';inp.onchange=e=>{const file=e.target.files[0];if(!file)return;loadXLSX().then(XLSX=>{const rd=new FileReader();rd.onload=ev=>{try{const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});prodParse(XLSX,wb);ss();rProd();}catch(err){alert('Error al leer el Excel: '+err.message);}};rd.readAsArrayBuffer(file);}).catch(err=>alert(err.message));};inp.click();}
-function prodParse(XLSX,wb){
-  const pr=prodInit();
-  const pk=PROCS.map(x=>x.k);
-  // Buscar hoja sin importar mayúsculas/minúsculas
-  const sheetName=name=>Object.keys(wb.Sheets).find(k=>k.toLowerCase()===name.toLowerCase())||null;
-  const s1key=sheetName('Registro por Lote')||sheetName('Registro por lote');
-  if(s1key){
-    const rows=XLSX.utils.sheet_to_json(wb.Sheets[s1key],{header:1,raw:true,defval:''});
-    const SKIP=['n° lote','n°lote','lote','totales','total','promedios',''];
-    // Buscar primera fila de datos dinámicamente
-    let start=0;
-    for(let i=0;i<rows.length;i++){const v=String(rows[i][0]||'').trim().toLowerCase();if(v&&!SKIP.some(s=>v.includes(s))&&!v.startsWith('steph')&&!v.startsWith('registro')&&!v.startsWith('proceso')){start=i;break;}}
-    const L=[];
-    for(let i=start;i<rows.length;i++){
-      const r=rows[i];if(!r)continue;
-      const n=String(r[0]||'').trim();
-      if(!n||/^(totales|total|promedios)/i.test(n))continue;
-      const l=prodBlankLote();
-      l.nLote=n;
-      // Fecha: puede ser número serial de Excel o string
-      const fd=r[1];
-      if(fd&&!isNaN(Number(fd))){const d=new Date(Math.round((Number(fd)-25569)*86400*1000));l.fecha=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-      else l.fecha=fd||'';
-      l.cant=r[2]||'';
-      for(let p=0;p<5;p++){l[pk[p]].ini=ptime(r[3+p*2]);l[pk[p]].fin=ptime(r[4+p*2]);}
-      l.obs=r[21]||'';
-      L.push(l);
-    }
-    if(L.length)pr.lotes=L;
-  }
-  const s2key=sheetName('Seguimiento '+PTOTAL+' Racks')||sheetName('Seguimiento 60 Racks');
-  if(s2key){
-    const rr=XLSX.utils.sheet_to_json(wb.Sheets[s2key],{header:1,raw:false,defval:''});
-    // Buscar primera fila de datos (donde col 0 es un número = número de rack)
-    let rStart=0;
-    for(let i=0;i<rr.length;i++){if(!isNaN(parseInt(rr[i][0]))&&String(rr[i][0]).trim()!==''){rStart=i;break;}}
-    for(let k=0;k<PTOTAL;k++){
-      const row=rr[rStart+k];if(!row)continue;
-      pr.racks[k].lote=row[1]||'';
-      for(let e=0;e<5;e++)pr.racks[k].e[e]=String(row[2+e]).trim()==='✓';
-    }
-  }
-}
-function prodExport(){const pr=prodInit();loadXLSX().then(XLSX=>{const wb=XLSX.utils.book_new();const h1=[['STEPH – COVER ENGINE | CONTROL DE FABRICACIÓN | '+PTOTAL+' UNIDADES'],[],[],[],['N° Lote','Fecha','Racks','CM Ini','CM Fin','Láser Ini','Láser Fin','Router Ini','Router Fin','Sold Ini','Sold Fin','Unión Ini','Unión Fin','T.CM','T.Láser','T.Router','T.Sold','T.Unión','Total min','Total hs','Racks/h','Obs.']];pr.lotes.forEach((l,idx)=>{const Rr=6+idx;const proc=[];PROCS.forEach(x=>proc.push(l[x.k].ini,l[x.k].fin));h1.push([l.nLote,l.fecha,pnum(l.cant)].concat(proc).concat([{f:`IF(OR(E${Rr}="",D${Rr}=""),"",ROUND((E${Rr}-D${Rr})*1440,0))`},{f:`IF(OR(G${Rr}="",F${Rr}=""),"",ROUND((G${Rr}-F${Rr})*1440,0))`},{f:`IF(OR(I${Rr}="",H${Rr}=""),"",ROUND((I${Rr}-H${Rr})*1440,0))`},{f:`IF(OR(K${Rr}="",J${Rr}=""),"",ROUND((K${Rr}-J${Rr})*1440,0))`},{f:`IF(OR(M${Rr}="",L${Rr}=""),"",ROUND((M${Rr}-L${Rr})*1440,0))`},{f:`SUM(N${Rr}:R${Rr})`},{f:`IF(S${Rr}="","",ROUND(S${Rr}/60,2))`},{f:`IF(OR(C${Rr}="",T${Rr}="",T${Rr}=0),"",ROUND(C${Rr}/T${Rr},1))`},l.obs]));});XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(h1),'Registro por Lote');const h2=[['SEGUIMIENTO INDIVIDUAL – '+PTOTAL+' COVER ENGINE'],[],[],[],['N° Rack','Lote','CM ✓','Láser ✓','Router ✓','Sold ✓','Unión ✓','Etapas','Estado']];pr.racks.forEach(r=>{const ok=r.e.filter(Boolean).length;h2.push([r.n,r.lote].concat(r.e.map(x=>x?'✓':'')).concat([ok,ok===5?'✅ LISTO':ok===0?'⏳ PENDIENTE':'🔧 EN PROCESO '+ok+'/5']));});XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(h2),'Seguimiento '+PTOTAL+' Racks');const R=prodResumen();const h3=[['RESUMEN EJECUTIVO – COVER ENGINE x'+PTOTAL],[],['Proceso','Prom. (min)','Mín.','Máx.','% del Total','Etapa crítica']];R.rows.forEach(r=>h3.push([r.n,pround(r.avg),r.min,r.max,r.pct!=null?pround(r.pct,1)+'%':'',r.bott?'⚠️ CUELLO DE BOTELLA':'']));h3.push(['TOTAL PROMEDIO POR RACK',pround(R.total),(R.total!=null?pround(R.total/60,2):'')+' hs']);h3.push([]);h3.push(['PROYECCIÓN PARA '+PTOTAL+' RACKS']);h3.push(['Tiempo total (serie, min)','','','',pround(R.serieMin)]);h3.push(['Tiempo total (serie, hs)','','','',pround(R.serieHs,1)]);h3.push(['Con paralelo (−40%, hs)','','','',pround(R.parHs,1)]);h3.push(['Racks completados','','','',R.done]);h3.push(['% Avance pedido','','','',pround(R.avance,1)+'%']);XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(h3),'Resumen Ejecutivo');XLSX.writeFile(wb,'CoverEngine_'+PTOTAL+'Racks.xlsx');}).catch(err=>alert(err.message));}
 /* =================== FIN PRODUCCIÓN · COVER ENGINE =================== */
 
 ['c-f','e-f','f-f'].forEach(id=>{try{document.getElementById(id).valueAsDate=new Date();}catch(e){}});
