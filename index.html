@@ -569,7 +569,7 @@ function rFab(){
   const fid=(p&&p.fabProyectoId)?String(p.fabProyectoId):'';
   const regs=fid?FAB.registros.filter(r=>String(r.proyecto_id)===fid):FAB.registros.slice();
   const tarifa=Number(DB.fabTarifa)||0;
-  const onm=id=>{const o=ops.find(x=>String(x.id)===String(id));return o?o.nombre:'Op. '+id;};
+  const onm=id=>{const o=ops.find(x=>String(x.id)===String(id));if(!o)return 'Leg. '+id;const lg=(o.legajo!==undefined&&o.legajo!==null&&o.legajo!=='')?o.legajo:o.id;return 'Leg. '+lg+(o.nombre?' · '+o.nombre:'');};
   const enm=id=>{const e=ets.find(x=>String(x.id)===String(id));return e?e.nombre:'Etapa '+id;};
   const pnm=id=>{const x=pys.find(y=>String(y.id)===String(id));return x?x.nombre:'Proy. '+id;};
   const hTot=regs.reduce((s,r)=>s+(Number(r.horas)||0),0);
