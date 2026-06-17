@@ -546,7 +546,7 @@ function fabLoad(force){
   }).catch(err=>{FAB.err=(err&&err.message)||'Error de conexión';}).then(()=>{FAB.loading=null;return FAB;});
   return FAB.loading;
 }
-const fabHoras=p=>(p&&p.fabProyectoId)?FAB.registros.filter(r=>String(r.proyecto_id)===String(p.fabProyectoId)).reduce((s,r)=>s+(Number(r.horas)||0),0):0;
+const fabHoras=p=>{if(!p)return 0;const fab=p.fabProyectoId?FAB.registros.filter(r=>String(r.proyecto_id)===String(p.fabProyectoId)).reduce((s,r)=>s+(Number(r.horas)||0),0):0;const man=(p.tiemposManual||[]).reduce((s,m)=>s+(Number(m.horas)||0),0);return fab+man;};
 const fabCost=p=>fabHoras(p)*(Number(DB.fabTarifa)||0);
 let FCH={};
 function setTarifa(v){DB.fabTarifa=Number(v)||0;ss();rFab();rSB();}
