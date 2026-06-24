@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script>
 if(window.Chart){
   Chart.defaults.font.family="'Inter',sans-serif";
@@ -774,7 +775,81 @@ function delE(id){const p=P();if(!p)return;p.estructura=(p.estructura||[]).filte
 function lCfg(){const p=P();if(!p)return;const map={'cfg-cli':'cliente','cfg-c':'codigo','cfg-d':'descripcion','cfg-fi':'inicio','cfg-ff':'fin','cfg-e':'estado','cfg-p':'presup','cfg-hp':'horasPresup','cfg-ap':'avplan','cfg-ar':'avreal'};Object.entries(map).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.value=p[k]||'';});fillFabSel();fabLoad().then(fillFabSel);}
 function saveCfg(){const p=P();if(!p)return;const map={'cfg-cli':'cliente','cfg-c':'codigo','cfg-d':'descripcion','cfg-fi':'inicio','cfg-ff':'fin','cfg-e':'estado'};Object.entries(map).forEach(([id,k])=>{p[k]=document.getElementById(id).value;});p.fabProyectoId=document.getElementById('cfg-fab').value||'';p.presup=Number(document.getElementById('cfg-p').value)||0;p.avplan=Number(document.getElementById('cfg-ap').value)||0;p.avreal=Number(document.getElementById('cfg-ar').value)||0;p.horasPresup=Number(document.getElementById('cfg-hp').value)||0;ss();rSB();document.getElementById('tb-title').textContent=p.cliente||'Sin cliente';document.getElementById('tb-sub').textContent=p.codigo?'Cód: '+p.codigo:'';const em={activo:'stag-a',pausado:'stag-p',planificado:'stag-pl',finalizado:'stag-f'};document.getElementById('tb-est').innerHTML=`<span class="stag ${em[p.estado]||'stag-f'}">${p.estado}</span>`;go('dashboard');}
 function delP(){if(!CUR)return;if(!confirm('¿Eliminar este proyecto?'))return;DB.projects=DB.projects.filter(p=>p.id!==CUR);CUR=null;ss();rSB();document.getElementById('tb-title').textContent='Seleccioná un proyecto';document.getElementById('tb-sub').textContent='Steph Innovations S.A.';document.getElementById('tb-est').innerHTML='';document.getElementById('btn-exp').style.display='none';allHide();document.getElementById('page-empty').style.display='';document.getElementById('page-empty').classList.add('on');}
-function exportP(){const p=P();if(!p)return;const b=new Blob([JSON.stringify(p,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=((p.cliente||'proyecto')+'-'+(p.codigo||p.id)).replace(/\s+/g,'_')+'.json';a.click();}
+async function exportP(){
+  const p=P(); if(!p){alert('Seleccioná un proyecto.');return;}
+  if(typeof ExcelJS==='undefined'){alert('No se pudo cargar el generador de Excel (¿sin conexión?).');return;}
+  if(typeof fabLoad==='function'){ try{ await fabLoad(); }catch(e){} }
+  const C_TIT='FF0F172A',C_HEAD='FF1E293B',C_ZEBRA='FFF1F5F9',C_OK='FFDCFCE7';
+  const bd={style:'thin',color:{argb:'FFCBD5E1'}},bordes={top:bd,left:bd,bottom:bd,right:bd};
+  const fill=argb=>({type:'pattern',pattern:'solid',fgColor:{argb}});
+  const $f='"$"#,##0',$h='0.00';
+  function titulo(ws,nCols,sub){const last=String.fromCharCode(64+nCols);const r1=ws.addRow(['STEPH INNOVATIONS — '+(p.cliente||'Proyecto')]);r1.height=26;ws.mergeCells('A1:'+last+'1');const c1=ws.getCell('A1');c1.font={bold:true,size:15,color:{argb:'FFFFFFFF'}};c1.fill=fill(C_TIT);c1.alignment={vertical:'middle',horizontal:'center'};const r2=ws.addRow([sub]);r2.height=18;ws.mergeCells('A2:'+last+'2');const c2=ws.getCell('A2');c2.font={italic:true,size:10,color:{argb:'FF64748B'}};c2.alignment={vertical:'middle',horizontal:'center'};ws.addRow([]);}
+  function header(row){row.eachCell(c=>{c.font={bold:true,size:11,color:{argb:'FFFFFFFF'}};c.fill=fill(C_HEAD);c.alignment={vertical:'middle',horizontal:'center',wrapText:true};c.border=bordes;});}
+  function zebra(ws,from,to){for(let i=from;i<=to;i++){const r=ws.getRow(i);r.eachCell({includeEmpty:true},c=>{c.border=bordes;if((i-from)%2===1)c.fill=fill(C_ZEBRA);});}}
+  function totalRow(ws,arr,moneyCols){const row=ws.addRow(arr);row.eachCell(c=>{c.font={bold:true};c.fill=fill(C_OK);c.border=bordes;});(moneyCols||[]).forEach(ci=>row.getCell(ci).numFmt=$f);return row;}
+  const fechaExp=new Date().toLocaleDateString('es-AR')+' '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  const tarifa=Number(DB.fabTarifa)||0;
+  const wb=new ExcelJS.Workbook();wb.creator='Steph Dashboard';
+  const est=FAB.estado||{},ops=est.operarios||[],ets=est.etapas||[];
+  const lgm=id=>{const o=ops.find(x=>String(x.id)===String(id));return o?((o.legajo!=null&&o.legajo!=='')?o.legajo:o.id):id;};
+  const onm=id=>{const o=ops.find(x=>String(x.id)===String(id));if(!o)return 'Leg. '+id;const lg=(o.legajo!=null&&o.legajo!=='')?o.legajo:o.id;return 'Leg. '+lg+(o.nombre?' · '+o.nombre:'');};
+  const enm=id=>{if(id==='__manual__')return 'Carga manual';const e=ets.find(x=>String(x.id)===String(id));return e?e.nombre:'Etapa '+id;};
+  const fid=p.fabProyectoId?String(p.fabProyectoId):'';
+  const regs=fid?FAB.registros.filter(r=>String(r.proyecto_id)===fid):FAB.registros.slice();
+  (p.tiemposManual||[]).forEach(m=>regs.push({operario_id:m.operario_id,horas:Number(m.horas)||0,racks:0,etapa_id:'__manual__',end_ts:m.fecha,turno:'Manual'}));
+  const byOp={},byEt={};let hTot=0,racksTot=0;
+  regs.forEach(r=>{const h=Number(r.horas)||0,rk=Number(r.racks)||0;hTot+=h;racksTot+=rk;byOp[r.operario_id]=byOp[r.operario_id]||{h:0,rk:0};byOp[r.operario_id].h+=h;byOp[r.operario_id].rk+=rk;byEt[r.etapa_id]=byEt[r.etapa_id]||{h:0,rk:0};byEt[r.etapa_id].h+=h;byEt[r.etapa_id].rk+=rk;});
+  const costoTot=pTot(p),venta=pVenta(p),margen=venta-costoTot,margenPct=venta>0?margen/venta:0;
+  const presup=Number(p.presup)||0,costDir=(p.costos||[]).reduce((s,c)=>s+Number(c.monto),0),costEst=(p.estructura||[]).reduce((s,e)=>s+Number(e.monto),0),moFab=fabCost(p);
+  const fact=tFc(p),cobrado=fcCob(p),hP=Number(p.horasPresup)||0;
+  const R=wb.addWorksheet('Resumen');R.columns=[{width:30},{width:22},{width:4}];
+  titulo(R,3,'Exportado: '+fechaExp);
+  const secc=t=>{const row=R.addRow([t]);row.getCell(1).font={bold:true,size:12,color:{argb:'FF0F172A'}};R.mergeCells('A'+row.number+':C'+row.number);};
+  const kv=(k,v,fmt)=>{const row=R.addRow([k,v]);row.getCell(1).font={bold:true,color:{argb:'FF475569'}};if(fmt)row.getCell(2).numFmt=fmt;};
+  secc('Datos del proyecto');kv('Proyecto',p.cliente||'—');kv('Código',p.codigo||'—');kv('Estado',p.estado||'—');kv('Descripción',p.descripcion||'—');R.addRow([]);
+  secc('Resultado financiero');kv('Precio de venta',venta,$f);kv('Costo total',costoTot,$f);kv('Margen bruto',margen,$f);kv('Margen %',margenPct,'0.0%');R.addRow([]);
+  secc('Presupuesto y avance');kv('Presupuesto de costo',presup,$f);kv('Costo incurrido',costoTot,$f);kv('Restante',presup-costoTot,$f);kv('Avance planificado',(Number(p.avplan)||0)/100,'0%');kv('Avance real',(Number(p.avreal)||0)/100,'0%');R.addRow([]);
+  secc('Desglose de costo');kv('Costos directos',costDir,$f);kv('Estructura',costEst,$f);kv('Mano de obra (fábrica)',moFab,$f);R.addRow([]);
+  secc('Horas');kv('Horas reales',hTot,$h);if(hP>0)kv('Horas presupuestadas',hP,$h);kv('Tarifa $/h',tarifa,$f);kv('Racks producidos',racksTot);R.addRow([]);
+  secc('Facturación');kv('Facturado',fact,$f);kv('Cobrado',cobrado,$f);kv('Pendiente de cobro',fact-cobrado,$f);
+  const T=wb.addWorksheet('Tiempos',{views:[{state:'frozen',ySplit:4}]});T.columns=[{width:10},{width:32},{width:12},{width:10},{width:16}];
+  titulo(T,5,regs.length+' registros · '+hTot.toFixed(2)+' horas · incluye carga manual');
+  T.addRow(['POR OPERARIO']).getCell(1).font={bold:true,size:12};
+  header(T.addRow(['Legajo','Operario','Horas','Racks','Costo']));
+  let f1=T.rowCount+1;
+  Object.entries(byOp).sort((a,b)=>b[1].h-a[1].h).forEach(([id,v])=>{const row=T.addRow([lgm(id),onm(id),v.h,v.rk||'',tarifa?v.h*tarifa:'']);row.getCell(3).numFmt=$h;if(tarifa)row.getCell(5).numFmt=$f;});
+  zebra(T,f1,T.rowCount);
+  totalRow(T,['','TOTAL',hTot,racksTot,tarifa?hTot*tarifa:''],[5]).getCell(3).numFmt=$h;
+  T.addRow([]);T.addRow([]);
+  T.addRow(['POR TAREA']).getCell(1).font={bold:true,size:12};
+  header(T.addRow(['Tarea','Horas','Racks','% horas','']));
+  let f2=T.rowCount+1;
+  Object.entries(byEt).sort((a,b)=>b[1].h-a[1].h).forEach(([id,v])=>{const row=T.addRow([enm(id),v.h,v.rk||'',hTot>0?v.h/hTot:0,'']);row.getCell(2).numFmt=$h;row.getCell(4).numFmt='0.0%';});
+  zebra(T,f2,T.rowCount);
+  const C=wb.addWorksheet('Costos');C.columns=[{width:12},{width:34},{width:16},{width:16},{width:18},{width:24}];
+  titulo(C,6,'Costos directos y estructura');
+  C.addRow(['COSTOS DIRECTOS']).getCell(1).font={bold:true,size:12};
+  header(C.addRow(['Fecha','Descripción','Categoría','Monto','Responsable','Notas']));
+  let c1=C.rowCount+1;
+  (p.costos||[]).forEach(x=>{const row=C.addRow([x.fecha||'',x.desc||'',x.cat||'',Number(x.monto)||0,x.resp||'',x.notas||'']);row.getCell(4).numFmt=$f;});
+  zebra(C,c1,C.rowCount);totalRow(C,['','TOTAL','',costDir,'',''],[4]);
+  C.addRow([]);C.addRow([]);
+  C.addRow(['ESTRUCTURA']).getCell(1).font={bold:true,size:12};
+  header(C.addRow(['Fecha','Concepto','Categoría','Monto','Frecuencia','Notas']));
+  let c2=C.rowCount+1;
+  (p.estructura||[]).forEach(x=>{const row=C.addRow([x.fecha||'',x.concepto||'',x.cat||'',Number(x.monto)||0,x.freq||'',x.notas||'']);row.getCell(4).numFmt=$f;});
+  zebra(C,c2,C.rowCount);totalRow(C,['','TOTAL','',costEst,'',''],[4]);
+  const F=wb.addWorksheet('Facturas');F.columns=[{width:12},{width:34},{width:10},{width:16},{width:12},{width:16},{width:14}];
+  titulo(F,7,'Facturas y cobranzas');
+  header(F.addRow(['Fecha','Descripción','Moneda','Monto','Cotización','Monto ARS','Estado']));
+  let ff=F.rowCount+1;
+  (p.facturas||[]).forEach(x=>{const row=F.addRow([x.fecha||'',x.desc||'',x.moneda||'ARS',Number(x.monto)||0,Number(x.cotiz)||'',fARS(x),x.estado||'']);row.getCell(4).numFmt=$f;row.getCell(6).numFmt=$f;});
+  zebra(F,ff,F.rowCount);totalRow(F,['','TOTAL','','','',fact,''],[6]);
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:((p.cliente||'proyecto')+'_'+(p.codigo||p.id)).replace(/\s+/g,'_')+'.xlsx'});
+  a.click();
+}
 
 /* =================== FIN PRODUCCIÓN · COVER ENGINE =================== */
 
