@@ -547,7 +547,8 @@ function fabLoad(force){
   }).catch(err=>{FAB.err=(err&&err.message)||'Error de conexión';}).then(()=>{FAB.loading=null;return FAB;});
   return FAB.loading;
 }
-const fabHoras=p=>{if(!p)return 0;const fab=p.fabProyectoId?FAB.registros.filter(r=>String(r.proyecto_id)===String(p.fabProyectoId)).reduce((s,r)=>s+(Number(r.horas)||0),0):0;const man=(p.tiemposManual||[]).reduce((s,m)=>s+(Number(m.horas)||0),0);return fab+man;};
+function fabAlmuerzo(regs){const seen={};(regs||[]).forEach(r=>{if(r.etapa_id==='__manual__'||r.etapa_id==='__almuerzo__'||r.manual)return;const d=String(r.end_ts||r.start_ts||'').slice(0,10);if(d)seen[r.operario_id+'|'+d]=d;});const byOp={},byDay={};let tot=0;Object.entries(seen).forEach(([k,d])=>{const op=k.split('|')[0];byOp[op]=(byOp[op]||0)+1;byDay[d]=(byDay[d]||0)+1;tot++;});return{byOp,byDay,tot};}
+const fabHoras=p=>{if(!p)return 0;const reg=p.fabProyectoId?FAB.registros.filter(r=>String(r.proyecto_id)===String(p.fabProyectoId)):[];const fab=reg.reduce((s,r)=>s+(Number(r.horas)||0),0);const alm=fabAlmuerzo(reg).tot;const man=(p.tiemposManual||[]).reduce((s,m)=>s+(Number(m.horas)||0),0);return fab+alm+man;};
 const fabCost=p=>fabHoras(p)*(Number(DB.fabTarifa)||0);
 let FCH={};
 function setTarifa(v){DB.fabTarifa=Number(v)||0;ss();rFab();rSB();}
@@ -571,12 +572,14 @@ function rFab(){
   ((p&&p.tiemposManual)||[]).forEach(m=>regs.push({operario_id:m.operario_id,horas:Number(m.horas)||0,racks:0,etapa_id:'__manual__',start_ts:m.fecha,end_ts:m.fecha,turno:'Manual',proyecto_id:fid,manual:true,_mid:m.id}));
   const tarifa=Number(DB.fabTarifa)||0;
   const onm=id=>{const o=ops.find(x=>String(x.id)===String(id));if(!o)return 'Leg. '+id;const lg=(o.legajo!==undefined&&o.legajo!==null&&o.legajo!=='')?o.legajo:o.id;return 'Leg. '+lg+(o.nombre?' · '+o.nombre:'');};
-  const enm=id=>{if(id==='__manual__')return 'Carga manual';const e=ets.find(x=>String(x.id)===String(id));return e?e.nombre:'Etapa '+id;};
+  const enm=id=>{if(id==='__manual__')return 'Carga manual';if(id==='__almuerzo__')return 'Almuerzo (pago)';const e=ets.find(x=>String(x.id)===String(id));return e?e.nombre:'Etapa '+id;};
   const pnm=id=>{const x=pys.find(y=>String(y.id)===String(id));return x?x.nombre:'Proy. '+id;};
-  const hTot=regs.reduce((s,r)=>s+(Number(r.horas)||0),0);
+  let hTot=regs.reduce((s,r)=>s+(Number(r.horas)||0),0);
   const hoy=new Date().toISOString().split('T')[0];
   const hHoy=regs.filter(r=>String(r.end_ts||r.start_ts||'').slice(0,10)===hoy).reduce((s,r)=>s+(Number(r.horas)||0),0);
   const racks=regs.reduce((s,r)=>s+(Number(r.racks)||0),0);
+  const etTipo=id=>{const e=ets.find(x=>String(x.id)===String(id));return e?e.racksTipo:null;};
+  let racksArm=0,racksTer=0;regs.forEach(r=>{const _t=etTipo(r.etapa_id),_rk=Number(r.racks)||0;if(_t==='armados')racksArm+=_rk;else if(_t==='terminados')racksTer+=_rk;});
   const timers=FAB.timers.filter(t=>!fid||String(t.proyecto_id)===fid);
   const costo=hTot*tarifa;
   const hP=Number(p&&p.horasPresup)||0,dvH=hTot-hP,dvP=hP>0?dvH/hP*100:0;
@@ -586,6 +589,10 @@ function rFab(){
     byEt[r.etapa_id]=byEt[r.etapa_id]||{h:0,rk:0};byEt[r.etapa_id].h+=Number(r.horas)||0;byEt[r.etapa_id].rk+=Number(r.racks)||0;
     const d=String(r.end_ts||r.start_ts||'').slice(0,10);if(d)byDay[d]=(byDay[d]||0)+(Number(r.horas)||0);
   });
+  const _alm=fabAlmuerzo(regs);
+  Object.entries(_alm.byOp).forEach(([op,h])=>{byOp[op]=byOp[op]||{h:0,rk:0};byOp[op].h+=h;});
+  Object.entries(_alm.byDay).forEach(([d,h])=>{byDay[d]=(byDay[d]||0)+h;});
+  if(_alm.tot>0){byEt['__almuerzo__']={h:_alm.tot,rk:0};hTot+=_alm.tot;}
   const opOpts=ops.map(o=>{const lg=(o.legajo!==undefined&&o.legajo!==null&&o.legajo!=='')?o.legajo:o.id;return `<option value="${o.id}">Leg. ${lg}${o.nombre?' · '+o.nombre:''}</option>`;}).join('');
   const formCard=`<div class="card"><div class="ch"><div class="ct-lbl"><div class="cl" style="background:var(--gold)"></div>Cargar tiempo (manual)</div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;align-items:end"><div><label>Modo</label><select id="man-modo" onchange="var u=document.getElementById('man-op-wrap');if(u)u.style.display=this.value==='uno'?'':'none'"><option value="todos">Todos los operarios</option><option value="uno">Por operario</option></select></div><div id="man-op-wrap" style="display:none"><label>Operario</label><select id="man-op">${opOpts}</select></div><div><label>Horas</label><input type="number" id="man-horas" min="0" step="0.25" placeholder="Ej: 8"></div><div><label>Fecha</label><input type="date" id="man-fecha" value="${hoy}"></div><div><button class="btn btn-g" style="width:100%" onclick="fabAddManual()"><i class="ti ti-plus" aria-hidden="true"></i>Guardar</button></div></div></div>`;
   const vinc=fid?`Vinculado a <strong style="color:var(--gold)">${pnm(fid)}</strong> · el costo de mano de obra se suma al proyecto`:`<span style="color:var(--warn2)">Sin vincular — mostrando toda la fábrica. Vinculá este proyecto desde Configuración.</span>`;
@@ -600,7 +607,7 @@ function rFab(){
     </div>
   </div>
   ${formCard}
-  <div class="mg">${mc('var(--gold)','Horas totales',fH(hTot),hP>0?('de '+fH(hP)+' presupuestadas'):(regs.length+' registros'))}${mc('var(--blue2)','Horas hoy',fH(hHoy),hoy)}${mc('var(--ok2)','Racks producidos',racks,'según registros')}${mc('var(--warn2)','Trabajando ahora',timers.length,timers.length?timers.map(t=>onm(t.operario_id)).join(', '):'nadie activo')}${mc('#8878cc','Costo mano de obra',f$(costo),tarifa?('@ '+f$(tarifa)+'/h'):'definí la tarifa ↑')}${mc('var(--err2)','Operarios',Object.keys(byOp).length,'con horas cargadas')}</div>
+  <div class="mg">${mc('var(--gold)','Horas totales',fH(hTot),hP>0?('de '+fH(hP)+' presupuestadas'):(regs.length+' registros'))}${mc('var(--blue2)','Horas hoy',fH(hHoy),hoy)}${(racksArm||racksTer)?(mc('var(--ok2)','Racks armados',racksArm,'Ensamble')+mc('#5aad7a','Racks terminados',racksTer,'APM + Bulonería')):mc('var(--ok2)','Racks producidos',racks,'sin clasificar')}${mc('var(--warn2)','Trabajando ahora',timers.length,timers.length?timers.map(t=>onm(t.operario_id)).join(', '):'nadie activo')}${mc('#8878cc','Costo mano de obra',f$(costo),tarifa?('@ '+f$(tarifa)+'/h'):'definí la tarifa ↑')}${mc('var(--err2)','Operarios',Object.keys(byOp).length,'con horas cargadas')}</div>
   <div class="card"><div class="ch"><div class="ct-lbl"><div class="cl" style="background:#c8883a"></div>Horas presupuestadas vs reales</div>${hP>0?`<span class="tg ${dvH>0?'tg-r':'tg-g'}">${dvH>0?'+':''}${Math.round(dvH*10)/10} h (${dvP>=0?'+':''}${dvP.toFixed(0)}%)</span>`:''}</div>${hP>0?`<div style="display:grid;grid-template-columns:minmax(200px,260px) 1fr;gap:18px;align-items:center"><div><div class="krow"><span class="klbl">Estimadas</span><span class="kval">${fH(hP)}</span></div><div class="krow"><span class="klbl">Reales (fábrica)</span><span class="kval">${fH(hTot)}</span></div><div class="krow"><span class="klbl">Desvío</span><span class="kval" style="color:${dvH>0?'var(--err2)':'var(--ok2)'}">${dvH>0?'+':'-'}${fH(Math.abs(dvH))}</span></div><div class="krow"><span class="klbl">Consumido</span><span class="kval" style="color:${hTot>hP?'var(--err2)':'var(--gold)'}">${fP(hTot/hP*100)}</span></div></div><div class="cw" style="height:110px"><canvas id="fch3"></canvas></div></div>`:`<div style="font-size:11px;color:var(--t2);padding:6px 0">Cargá las <strong style="color:var(--t1)">horas presupuestadas</strong> de este proyecto en Configuración y acá vas a ver el desvío estimado vs real.</div>`}</div>
   <div class="g2">
     <div class="card"><div class="ch"><div class="ct-lbl"><div class="cl" style="background:var(--gold)"></div>Horas por operario</div></div><div class="cw" style="height:150px"><canvas id="fch1"></canvas></div></div>
@@ -793,12 +800,14 @@ async function exportP(){
   const est=FAB.estado||{},ops=est.operarios||[],ets=est.etapas||[];
   const lgm=id=>{const o=ops.find(x=>String(x.id)===String(id));return o?((o.legajo!=null&&o.legajo!=='')?o.legajo:o.id):id;};
   const onm=id=>{const o=ops.find(x=>String(x.id)===String(id));if(!o)return 'Leg. '+id;const lg=(o.legajo!=null&&o.legajo!=='')?o.legajo:o.id;return 'Leg. '+lg+(o.nombre?' · '+o.nombre:'');};
-  const enm=id=>{if(id==='__manual__')return 'Carga manual';const e=ets.find(x=>String(x.id)===String(id));return e?e.nombre:'Etapa '+id;};
+  const enm=id=>{if(id==='__manual__')return 'Carga manual';if(id==='__almuerzo__')return 'Almuerzo (pago)';const e=ets.find(x=>String(x.id)===String(id));return e?e.nombre:'Etapa '+id;};
   const fid=p.fabProyectoId?String(p.fabProyectoId):'';
   const regs=fid?FAB.registros.filter(r=>String(r.proyecto_id)===fid):FAB.registros.slice();
   (p.tiemposManual||[]).forEach(m=>regs.push({operario_id:m.operario_id,horas:Number(m.horas)||0,racks:0,etapa_id:'__manual__',end_ts:m.fecha,turno:'Manual'}));
   const byOp={},byEt={};let hTot=0,racksTot=0;
   regs.forEach(r=>{const h=Number(r.horas)||0,rk=Number(r.racks)||0;hTot+=h;racksTot+=rk;byOp[r.operario_id]=byOp[r.operario_id]||{h:0,rk:0};byOp[r.operario_id].h+=h;byOp[r.operario_id].rk+=rk;byEt[r.etapa_id]=byEt[r.etapa_id]||{h:0,rk:0};byEt[r.etapa_id].h+=h;byEt[r.etapa_id].rk+=rk;});
+  const _alm=fabAlmuerzo(regs);Object.entries(_alm.byOp).forEach(([op,h])=>{byOp[op]=byOp[op]||{h:0,rk:0};byOp[op].h+=h;});if(_alm.tot>0){byEt['__almuerzo__']={h:_alm.tot,rk:0};hTot+=_alm.tot;}
+  const _etT=id=>{const e=ets.find(x=>String(x.id)===String(id));return e?e.racksTipo:null;};let racksArmE=0,racksTerE=0;regs.forEach(r=>{const t=_etT(r.etapa_id),k=Number(r.racks)||0;if(t==='armados')racksArmE+=k;else if(t==='terminados')racksTerE+=k;});
   const costoTot=pTot(p),venta=pVenta(p),margen=venta-costoTot,margenPct=venta>0?margen/venta:0;
   const presup=Number(p.presup)||0,costDir=(p.costos||[]).reduce((s,c)=>s+Number(c.monto),0),costEst=(p.estructura||[]).reduce((s,e)=>s+Number(e.monto),0),moFab=fabCost(p);
   const fact=tFc(p),cobrado=fcCob(p),hP=Number(p.horasPresup)||0;
@@ -810,7 +819,7 @@ async function exportP(){
   secc('Resultado financiero');kv('Precio de venta',venta,$f);kv('Costo total',costoTot,$f);kv('Margen bruto',margen,$f);kv('Margen %',margenPct,'0.0%');R.addRow([]);
   secc('Presupuesto y avance');kv('Presupuesto de costo',presup,$f);kv('Costo incurrido',costoTot,$f);kv('Restante',presup-costoTot,$f);kv('Avance planificado',(Number(p.avplan)||0)/100,'0%');kv('Avance real',(Number(p.avreal)||0)/100,'0%');R.addRow([]);
   secc('Desglose de costo');kv('Costos directos',costDir,$f);kv('Estructura',costEst,$f);kv('Mano de obra (fábrica)',moFab,$f);R.addRow([]);
-  secc('Horas');kv('Horas reales',hTot,$h);if(hP>0)kv('Horas presupuestadas',hP,$h);kv('Tarifa $/h',tarifa,$f);kv('Racks producidos',racksTot);R.addRow([]);
+  secc('Horas');kv('Horas reales',hTot,$h);if(hP>0)kv('Horas presupuestadas',hP,$h);kv('Tarifa $/h',tarifa,$f);kv('Racks armados',racksArmE);kv('Racks terminados',racksTerE);R.addRow([]);
   secc('Facturación');kv('Facturado',fact,$f);kv('Cobrado',cobrado,$f);kv('Pendiente de cobro',fact-cobrado,$f);
   const T=wb.addWorksheet('Tiempos',{views:[{state:'frozen',ySplit:4}]});T.columns=[{width:10},{width:32},{width:12},{width:10},{width:16}];
   titulo(T,5,regs.length+' registros · '+hTot.toFixed(2)+' horas · incluye carga manual');
